@@ -13,7 +13,7 @@
     "lint": "pnpm run lines:check && pnpm run db:check && pnpm -r --if-present lint",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test": "pnpm -r --if-present test",
+    "test": "pnpm --filter @tadscore/contracts build && pnpm --filter @tadscore/rule-engine build && pnpm -r --if-present test",
     "test:e2e": "pnpm --filter @tadscore/web --if-present test:e2e",
     "lines:check": "node scripts/check-file-lines.mjs",
     "db:check": "node scripts/check-migrations.mjs",
