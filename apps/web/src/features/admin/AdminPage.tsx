@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Activity, Building2, MailWarning, ScrollText, Users } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '../../components/ui/Button';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { Select } from '../../components/ui/Select';
@@ -11,18 +12,22 @@ import type { GlobalRole, UserStatus } from '../../lib/types';
 import { AdminRow as Row, AdminStatus as Status } from './AdminParts';
 
 type Tab = 'users' | 'workspaces' | 'audit' | 'system' | 'outbox';
-const tabs = [
-  { id: 'users', label: 'Tài khoản', icon: Users },
-  { id: 'workspaces', label: 'Workspace', icon: Building2 },
-  { id: 'audit', label: 'Audit', icon: ScrollText },
-  { id: 'system', label: 'Hệ thống', icon: Activity },
-  { id: 'outbox', label: 'Email', icon: MailWarning },
-] as const;
+
+const tabMeta = [
+  { id: 'users' as const, key: 'page.users', icon: Users },
+  { id: 'workspaces' as const, key: 'page.workspaces', icon: Building2 },
+  { id: 'audit' as const, key: 'page.audit', icon: ScrollText },
+  { id: 'system' as const, key: 'page.system', icon: Activity },
+  { id: 'outbox' as const, key: 'page.outbox', icon: MailWarning },
+];
 
 export function AdminPage() {
+  const { t, i18n } = useTranslation('admin');
+  const { t: tc } = useTranslation('common');
   const [tab, setTab] = useState<Tab>('users');
   const client = useQueryClient();
   const toast = useToast();
+  const locale = i18n.language === 'en' ? 'en-US' : 'vi-VN';
   const users = useQuery({
     queryKey: ['admin', 'users'],
     queryFn: api.admin.users,
@@ -63,7 +68,7 @@ export function AdminPage() {
     }) => api.admin.setUser(id, value),
     onSuccess: () => {
       client.invalidateQueries({ queryKey: ['admin', 'users'] });
-      toast('Đã cập nhật tài khoản');
+      toast(t('users.updated'));
     },
   });
   const setWorkspace = useMutation({
@@ -71,23 +76,20 @@ export function AdminPage() {
       api.admin.setWorkspace(id, status),
     onSuccess: () => {
       client.invalidateQueries({ queryKey: ['admin', 'workspaces'] });
-      toast('Đã cập nhật workspace');
+      toast(t('workspaces.updated'));
     },
   });
   const query = { users, workspaces, audit, system: health, outbox }[tab];
   return (
     <div className="page-shell">
-      <PageHeader
-        title="Quản trị platform"
-        description="Quản lý vai trò hệ thống, trạng thái tài khoản, workspace và vận hành email."
-      />
+      <PageHeader title={t('page.title')} description={t('page.description')} />
       <div className="mb-5 overflow-x-auto">
         <div
           className="flex w-max gap-1 border-b border-[var(--border)]"
           role="tablist"
-          aria-label="Khu vực quản trị"
+          aria-label={t('page.tabsLabel')}
         >
-          {tabs.map(({ id, label, icon: Icon }) => {
+          {tabMeta.map(({ id, key, icon: Icon }) => {
             const selected = tab === id;
             return (
               <button
@@ -102,7 +104,7 @@ export function AdminPage() {
                 }`}
               >
                 <Icon className="h-4 w-4" aria-hidden />
-                {label}
+                {t(key)}
               </button>
             );
           })}
@@ -116,20 +118,17 @@ export function AdminPage() {
         <section className="overflow-hidden rounded-[var(--radius)] border border-[var(--border)] bg-[var(--card)]">
           {tab === 'users' &&
             (!users.data?.length ? (
-              <EmptyState
-                title="Không có tài khoản"
-                message="Chưa có tài khoản nào trong hệ thống."
-              />
+              <EmptyState title={t('users.emptyTitle')} message={t('users.emptyMessage')} />
             ) : (
               users.data.map((user) => (
                 <Row
                   key={user.id}
                   title={user.fullName}
                   subtitle={`${user.email} · @${user.username}`}
-                  badge={user.emailVerifiedAt ? 'verified' : 'unverified'}
+                  badge={user.emailVerifiedAt ? t('users.verified') : t('users.unverified')}
                 >
                   <Select
-                    aria-label={`Vai trò hệ thống của ${user.email}`}
+                    aria-label={t('users.roleOf', { email: user.email })}
                     className="!w-auto"
                     value={user.globalRole}
                     onChange={(event) =>
@@ -139,11 +138,11 @@ export function AdminPage() {
                       })
                     }
                   >
-                    <option value="user">user</option>
-                    <option value="super_admin">super_admin</option>
+                    <option value="user">{tc('roles.user')}</option>
+                    <option value="super_admin">{tc('roles.super_admin')}</option>
                   </Select>
                   <Select
-                    aria-label={`Trạng thái của ${user.email}`}
+                    aria-label={t('users.statusOf', { email: user.email })}
                     className="!w-auto"
                     value={user.status}
                     onChange={(event) =>
@@ -153,16 +152,16 @@ export function AdminPage() {
                       })
                     }
                   >
-                    <option value="pending">pending</option>
-                    <option value="active">active</option>
-                    <option value="suspended">suspended</option>
+                    <option value="pending">{tc('status.pending')}</option>
+                    <option value="active">{tc('status.active')}</option>
+                    <option value="suspended">{tc('status.suspended')}</option>
                   </Select>
                   {!user.emailVerifiedAt && (
                     <Button
                       variant="secondary"
                       onClick={() => setUser.mutate({ id: user.id, value: { markVerified: true } })}
                     >
-                      Đánh dấu verified
+                      {t('users.markVerified')}
                     </Button>
                   )}
                 </Row>
@@ -170,40 +169,44 @@ export function AdminPage() {
             ))}
           {tab === 'workspaces' &&
             (!workspaces.data?.length ? (
-              <EmptyState title="Không có workspace" message="Chưa có workspace nào." />
+              <EmptyState
+                title={t('workspaces.emptyTitle')}
+                message={t('workspaces.emptyMessage')}
+              />
             ) : (
               workspaces.data.map((workspace) => (
                 <Row
                   key={workspace.id}
                   title={workspace.name}
-                  subtitle={`${workspace.ruleId} · ${workspace.memberCount ?? 0} thành viên · ${workspace.ownerEmail || ''}`}
+                  subtitle={`${workspace.ruleId} · ${t('workspaces.members', {
+                    count: workspace.memberCount ?? 0,
+                  })} · ${workspace.ownerEmail || ''}`}
                   badge={workspace.status}
                 >
                   <Button
                     variant={workspace.status === 'suspended' ? 'secondary' : 'danger'}
                     onClick={() => {
                       const status = workspace.status === 'suspended' ? 'active' : 'suspended';
-                      if (status === 'active' || confirm('Đình chỉ workspace này?'))
+                      if (status === 'active' || confirm(t('workspaces.confirmSuspend')))
                         setWorkspace.mutate({ id: workspace.id, status });
                     }}
                   >
-                    {workspace.status === 'suspended' ? 'Khôi phục' : 'Đình chỉ'}
+                    {workspace.status === 'suspended'
+                      ? t('workspaces.activate')
+                      : t('workspaces.suspend')}
                   </Button>
                 </Row>
               ))
             ))}
           {tab === 'audit' &&
             (!audit.data?.length ? (
-              <EmptyState
-                title="Chưa có audit log"
-                message="Các hành động quan trọng sẽ xuất hiện tại đây."
-              />
+              <EmptyState title={t('audit.emptyTitle')} message={t('audit.emptyMessage')} />
             ) : (
               audit.data.map((item) => (
                 <Row
                   key={item.id}
                   title={item.action}
-                  subtitle={`${item.entityType} · ${new Date(item.createdAt).toLocaleString('vi-VN')}`}
+                  subtitle={`${item.entityType} · ${new Date(item.createdAt).toLocaleString(locale)}`}
                   badge={item.entityId || 'system'}
                 />
               ))
@@ -212,22 +215,26 @@ export function AdminPage() {
             <div className="p-5">
               <div className="grid-auto">
                 <Status
-                  title="API & database"
+                  title={t('system.apiDb')}
                   value={health.data?.database ? 'healthy' : 'degraded'}
-                  detail={`Thời gian server: ${health.data?.time ? new Date(health.data.time).toLocaleString('vi-VN') : '—'}`}
+                  detail={t('system.serverTime', {
+                    time: health.data?.time
+                      ? new Date(health.data.time).toLocaleString(locale)
+                      : '—',
+                  })}
                 />
                 <Status
-                  title="Email outbox"
+                  title={t('system.emailOutbox')}
                   value={health.data?.failedEmails ? 'degraded' : 'healthy'}
-                  detail={`${health.data?.failedEmails ?? 0} email lỗi`}
+                  detail={t('system.failedEmails', { count: health.data?.failedEmails ?? 0 })}
                 />
                 <Status
-                  title="Xác minh email"
+                  title={t('system.emailVerification')}
                   value={health.data?.emailVerificationMode || 'off'}
-                  detail="Giá trị runtime đã loại bỏ secret"
+                  detail={t('system.runtimeNoSecrets')}
                 />
               </div>
-              <h2 className="mb-2 mt-6 text-sm font-semibold">Rule registry</h2>
+              <h2 className="mb-2 mt-6 text-sm font-semibold">{t('system.ruleRegistry')}</h2>
               <div className="overflow-hidden rounded-[var(--radius)] border border-[var(--border)]">
                 {rules.data?.map((rule) => (
                   <Row
@@ -242,16 +249,16 @@ export function AdminPage() {
           )}
           {tab === 'outbox' &&
             (!outbox.data?.length ? (
-              <EmptyState
-                title="Outbox trống"
-                message="Email đã xếp hàng và trạng thái gửi sẽ xuất hiện tại đây."
-              />
+              <EmptyState title={t('outbox.emptyTitle')} message={t('outbox.emptyMessage')} />
             ) : (
               outbox.data.map((item) => (
                 <Row
                   key={item.id}
                   title={item.template}
-                  subtitle={`${item.toEmail} · ${item.attemptCount}/${item.maxAttempts} lần · ${new Date(item.createdAt).toLocaleString('vi-VN')}`}
+                  subtitle={`${item.toEmail} · ${t('outbox.attempts', {
+                    attempt: item.attemptCount,
+                    max: item.maxAttempts,
+                  })} · ${new Date(item.createdAt).toLocaleString(locale)}`}
                   badge={item.status}
                 >
                   {item.status === 'failed' && (
@@ -260,10 +267,10 @@ export function AdminPage() {
                       onClick={async () => {
                         await api.admin.retryOutbox(item.id);
                         client.invalidateQueries({ queryKey: ['admin', 'outbox'] });
-                        toast('Đã đưa email vào hàng đợi lại');
+                        toast(t('outbox.retried'));
                       }}
                     >
-                      Thử gửi lại
+                      {t('outbox.retry')}
                     </Button>
                   )}
                 </Row>

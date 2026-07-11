@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Expand, Radio, Share2, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { QRCodeSVG } from 'qrcode.react';
 import { useParams } from 'react-router-dom';
 import { Brand } from '../../components/layout/Brand';
@@ -13,6 +14,7 @@ import { Leaderboard } from './Leaderboard';
 import { TeamDetailView } from './TeamDetailView';
 
 export function PublicRankingPage() {
+  const { t: tr } = useTranslation('ranking');
   const { token = '' } = useParams();
   const client = useQueryClient();
   const [presenter, setPresenter] = useState(false);
@@ -67,10 +69,7 @@ export function PublicRankingPage() {
   if (query.isError || !query.data)
     return (
       <main className="page-shell">
-        <ErrorState
-          retry={() => query.refetch()}
-          message="Bảng xếp hạng không tồn tại hoặc đã bị thu hồi."
-        />
+        <ErrorState retry={() => query.refetch()} message={tr('public.missing')} />
       </main>
     );
   return (
@@ -94,7 +93,7 @@ export function PublicRankingPage() {
               className={`h-4 w-4 ${connected ? 'text-[var(--success)]' : 'text-[var(--destructive)]'}`}
               aria-hidden
             />
-            {connected ? 'Đang cập nhật trực tiếp' : 'Đang kết nối lại'}
+            {connected ? tr('public.live') : tr('public.reconnecting')}
             <span className="text-[var(--border)]" aria-hidden>
               ·
             </span>
@@ -113,17 +112,17 @@ export function PublicRankingPage() {
               }}
             >
               <X className="h-4 w-4" />
-              Thoát trình chiếu
+              {tr('public.exitPresenter')}
             </Button>
           ) : (
             <>
               <Button variant="secondary" onClick={() => setQr(true)}>
                 <Share2 className="h-4 w-4" />
-                Chia sẻ
+                {tr('public.share')}
               </Button>
               <Button onClick={fullscreen}>
                 <Expand className="h-4 w-4" />
-                Trình chiếu
+                {tr('public.presenter')}
               </Button>
             </>
           )}
@@ -137,7 +136,7 @@ export function PublicRankingPage() {
       <Modal
         open={!!team}
         onClose={() => setTeam(undefined)}
-        title={team?.displayName || team?.name || 'Chi tiết đội'}
+        title={team?.displayName || team?.name || tr('public.teamDetail')}
       >
         {detail.isLoading ? (
           <LoadingState />
@@ -147,12 +146,12 @@ export function PublicRankingPage() {
           <TeamDetailView detail={detail.data} publicView />
         ) : null}
       </Modal>
-      <Modal open={qr} onClose={() => setQr(false)} title="Chia sẻ bảng xếp hạng">
+      <Modal open={qr} onClose={() => setQr(false)} title={tr('public.shareTitle')}>
         <div className="grid place-items-center gap-4 text-center">
           <QRCodeSVG value={location.href} size={220} level="M" />
           <p className="m-0 break-all text-sm text-[var(--muted-foreground)]">{location.href}</p>
           <Button variant="secondary" onClick={() => navigator.clipboard.writeText(location.href)}>
-            Sao chép liên kết
+            {tr('public.copyLink')}
           </Button>
         </div>
       </Modal>

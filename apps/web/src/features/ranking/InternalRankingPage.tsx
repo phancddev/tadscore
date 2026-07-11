@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link2 } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 import { Alert } from '../../components/ui/Alert';
 import { Button } from '../../components/ui/Button';
@@ -20,6 +21,8 @@ import { TeamDetailView } from './TeamDetailView';
 const SLUG_RE = /^[a-z0-9][a-z0-9-]{2,79}$/;
 
 export function InternalRankingPage() {
+  const { t: tr } = useTranslation('ranking');
+  const { t: tc } = useTranslation('common');
   const { workspaceId = '' } = useParams();
   const toast = useToast();
   const client = useQueryClient();
@@ -48,10 +51,9 @@ export function InternalRankingPage() {
   const create = useMutation({
     mutationFn: () => {
       const slug = useCustomSlug ? slugDraft.trim().toLowerCase() : undefined;
-      if (slug && !SLUG_RE.test(slug))
-        throw new Error('Slug không hợp lệ (a-z, 0-9, dấu -, 3–80 ký tự)');
+      if (slug && !SLUG_RE.test(slug)) throw new Error(tr('internal.invalidSlug'));
       return api.workspaces.createPublicLink(workspaceId, {
-        label: 'Bảng xếp hạng',
+        label: tr('internal.defaultLabel'),
         slug,
         isEnabled: true,
       });
@@ -60,9 +62,9 @@ export function InternalRankingPage() {
       refreshLinks();
       setSlugDraft('');
       setUseCustomSlug(false);
-      toast('Đã tạo link public');
+      toast(tr('internal.created'));
     },
-    onError: (error: Error) => toast(error.message || 'Không tạo được link'),
+    onError: (error: Error) => toast(error.message || tr('internal.createFailed')),
   });
   if (workspace.isLoading || ranking.isLoading)
     return (
@@ -79,21 +81,21 @@ export function InternalRankingPage() {
   const roleCanManage = ['owner', 'admin'].includes(workspace.data?.role || '');
   const canManage = roleCanManage && workspace.data?.status === 'active';
   const existing = links.data?.[0];
+  const statusKey = workspace.data?.status || '';
   return (
     <div className="page-shell">
-      <PageHeader
-        title="Bảng xếp hạng"
-        description="Chọn một đội để xem chi tiết các giao dịch điểm."
-      />
+      <PageHeader title={tr('internal.title')} description={tr('internal.description')} />
       {roleCanManage && !canManage && (
         <Alert variant="warning" className="mb-5" role="status">
-          Workspace đang {workspace.data?.status}; link public hiện chỉ đọc và không thể chỉnh sửa.
+          {tr('internal.readonly', {
+            status: tc(`status.${statusKey}`, { defaultValue: statusKey }),
+          })}
         </Alert>
       )}
       <Leaderboard ranking={ranking.data} onTeam={setTeam} />
       {roleCanManage && (
         <section className="mt-8">
-          <h2 className="mb-3 text-sm font-semibold">Link public</h2>
+          <h2 className="mb-3 text-sm font-semibold">{tr('internal.publicLinks')}</h2>
           {links.isLoading ? (
             <LoadingState rows={1} />
           ) : links.isError ? (
@@ -108,8 +110,8 @@ export function InternalRankingPage() {
           ) : (
             <Card className="grid gap-4 p-4">
               <EmptyState
-                title="Chưa có link public"
-                message="Tạo một lần — sau đó bật/tắt public hoặc custom slug mà không cần regenerate."
+                title={tr('internal.emptyLinksTitle')}
+                message={tr('internal.emptyLinksMessage')}
               />
               {canManage && (
                 <>
@@ -119,13 +121,13 @@ export function InternalRankingPage() {
                       checked={useCustomSlug}
                       onChange={(event) => setUseCustomSlug(event.target.checked)}
                     />
-                    Dùng custom slug (song song với link random)
+                    {tr('internal.useCustomSlug')}
                   </label>
                   {useCustomSlug && (
-                    <Field label="Custom slug" htmlFor="public-slug">
+                    <Field label={tr('internal.slugField')} htmlFor="public-slug">
                       <Input
                         id="public-slug"
-                        placeholder="vd: hoh-2026"
+                        placeholder={tr('internal.slugPlaceholder')}
                         value={slugDraft}
                         onChange={(event) => setSlugDraft(event.target.value.toLowerCase())}
                       />
@@ -137,7 +139,7 @@ export function InternalRankingPage() {
                     onClick={() => create.mutate()}
                   >
                     <Link2 className="h-4 w-4" />
-                    Tạo link public
+                    {tr('internal.createLink')}
                   </Button>
                 </>
               )}
@@ -148,7 +150,7 @@ export function InternalRankingPage() {
       <Modal
         open={!!team}
         onClose={() => setTeam(undefined)}
-        title={team?.displayName || team?.name || 'Chi tiết đội'}
+        title={team?.displayName || team?.name || tr('internal.teamDetail')}
       >
         {detail.isLoading ? (
           <LoadingState />

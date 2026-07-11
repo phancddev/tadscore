@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Copy, Link2, MailPlus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 import { Alert } from '../../components/ui/Alert';
 import { Badge } from '../../components/ui/Badge';
@@ -19,6 +20,8 @@ import type { Invitation, WorkspaceRole } from '../../lib/types';
 const copy = async (value: string) => navigator.clipboard.writeText(value);
 
 export function MembersPage() {
+  const { t } = useTranslation('workspace');
+  const { t: tc, i18n } = useTranslation('common');
   const { workspaceId = '' } = useParams();
   const client = useQueryClient();
   const toast = useToast();
@@ -55,7 +58,7 @@ export function MembersPage() {
       refresh();
       setOpen(false);
       setEmail('');
-      toast('Đã tạo và gửi lời mời');
+      toast(t('members.invited'));
     },
   });
   const share = useMutation({
@@ -69,7 +72,7 @@ export function MembersPage() {
     onSuccess: async (data) => {
       refresh();
       await copy(`${location.origin}/invite/${data.token}`);
-      toast('Đã tạo và sao chép link mời');
+      toast(t('members.linkCopied'));
     },
   });
   if (members.isLoading || workspace.isLoading)
@@ -81,31 +84,29 @@ export function MembersPage() {
   if (members.isError || workspace.isError)
     return (
       <div className="page-shell">
-        <ErrorState
-          retry={() => {
-            members.refetch();
-            workspace.refetch();
-          }}
-        />
+        <ErrorState retry={() => { members.refetch(); workspace.refetch(); }} />
       </div>
     );
   const roleCanManage = ['owner', 'admin'].includes(workspace.data?.role || '');
   const canManage = roleCanManage && workspace.data?.status === 'active';
+  const status = workspace.data?.status || '';
+  const statusLabel = status ? tc(`status.${status}`, { defaultValue: status }) : status;
+  const locale = i18n.language === 'en' ? 'en-US' : 'vi-VN';
   return (
     <div className="page-shell">
       <PageHeader
-        title="Thành viên"
-        description="Quyền workspace độc lập với quyền hệ thống."
+        title={t('members.title')}
+        description={t('members.description')}
         actions={
           canManage ? (
             <>
               <Button variant="secondary" loading={share.isPending} onClick={() => share.mutate()}>
                 <Copy className="h-4 w-4" />
-                Tạo link mời
+                {t('members.inviteLink')}
               </Button>
               <Button onClick={() => setOpen(true)}>
                 <MailPlus className="h-4 w-4" />
-                Mời qua email
+                {t('members.inviteEmail')}
               </Button>
             </>
           ) : undefined
@@ -113,16 +114,11 @@ export function MembersPage() {
       />
       {roleCanManage && !canManage && (
         <Alert variant="warning" className="mb-5">
-          <span>
-            Workspace đang {workspace.data?.status}; quản lý thành viên và lời mời tạm thời chỉ đọc.
-          </span>
+          <span>{t('members.readonly', { status: statusLabel })}</span>
         </Alert>
       )}
       {!members.data?.length ? (
-        <EmptyState
-          title="Chưa có thành viên"
-          message="Mời người dùng để cùng điều hành workspace."
-        />
+        <EmptyState title={t('members.emptyTitle')} message={t('members.emptyMessage')} />
       ) : (
         <Card className="divide-y divide-[var(--border)] overflow-hidden">
           {members.data.map((member) => (
@@ -142,7 +138,7 @@ export function MembersPage() {
                 {member.status}
               </Badge>
               <Select
-                aria-label={`Quyền của ${member.email}`}
+                aria-label={t('members.roleOf', { email: member.email })}
                 className="!w-auto min-w-[7.5rem]"
                 value={member.role}
                 disabled={!canManage || member.role === 'owner'}
@@ -152,20 +148,20 @@ export function MembersPage() {
                 }}
               >
                 <option value="owner" disabled>
-                  Owner
+                  {tc('roles.owner')}
                 </option>
-                <option value="admin">Admin</option>
-                <option value="scorer">Scorer</option>
-                <option value="viewer">Viewer</option>
+                <option value="admin">{tc('roles.admin')}</option>
+                <option value="scorer">{tc('roles.scorer')}</option>
+                <option value="viewer">{tc('roles.viewer')}</option>
               </Select>
               {canManage && member.role !== 'owner' && (
                 <Button
                   variant="ghost"
                   size="icon"
-                  aria-label={`Xóa ${member.email}`}
+                  aria-label={t('members.removeAria', { email: member.email })}
                   className="text-[var(--destructive)]"
                   onClick={async () => {
-                    if (confirm('Xóa thành viên này?')) {
+                    if (confirm(t('members.confirmRemove'))) {
                       await api.workspaces.removeMember(workspaceId, member.id);
                       refresh();
                     }
@@ -180,13 +176,13 @@ export function MembersPage() {
       )}
       {roleCanManage && (
         <section className="mt-6">
-          <h2 className="mb-3 m-0 text-base font-semibold tracking-tight">Lời mời đang quản lý</h2>
+          <h2 className="mb-3 m-0 text-base font-semibold tracking-tight">{t('members.pending')}</h2>
           {invitations.isLoading ? (
             <LoadingState rows={1} />
           ) : !invitations.data?.length ? (
             <EmptyState
-              title="Chưa có lời mời"
-              message="Link và lời mời email sẽ xuất hiện tại đây."
+              title={t('members.emptyInvitesTitle')}
+              message={t('members.emptyInvitesMessage')}
             />
           ) : (
             <div className="grid gap-3">
@@ -195,10 +191,11 @@ export function MembersPage() {
                   key={item.id}
                   invite={item}
                   canRevoke={canManage}
+                  locale={locale}
                   onRevoke={async () => {
                     await api.workspaces.revokeInvite(workspaceId, item.id);
                     refresh();
-                    toast('Đã thu hồi lời mời');
+                    toast(t('members.revoked'));
                   }}
                 />
               ))}
@@ -206,7 +203,7 @@ export function MembersPage() {
           )}
         </section>
       )}
-      <Modal open={open} onClose={() => setOpen(false)} title="Mời thành viên">
+      <Modal open={open} onClose={() => setOpen(false)} title={t('members.inviteTitle')}>
         <form
           className="grid gap-4"
           onSubmit={(event) => {
@@ -214,7 +211,7 @@ export function MembersPage() {
             invite.mutate();
           }}
         >
-          <Field label="Email" htmlFor="invite-email">
+          <Field label={t('members.email')} htmlFor="invite-email">
             <Input
               type="email"
               required
@@ -229,7 +226,7 @@ export function MembersPage() {
               {invite.error.message}
             </p>
           )}
-          <Button loading={invite.isPending}>Gửi lời mời</Button>
+          <Button loading={invite.isPending}>{t('members.sendInvite')}</Button>
         </form>
       </Modal>
     </div>
@@ -243,16 +240,18 @@ function RoleField({
   role: string;
   setRole: (role: Exclude<WorkspaceRole, 'owner'>) => void;
 }) {
+  const { t } = useTranslation('workspace');
+  const { t: tc } = useTranslation('common');
   return (
-    <Field label="Quyền được cấp" htmlFor="invite-role">
+    <Field label={t('members.grantedRole')} htmlFor="invite-role">
       <Select
         id="invite-role"
         value={role}
         onChange={(event) => setRole(event.target.value as Exclude<WorkspaceRole, 'owner'>)}
       >
-        <option value="admin">Admin</option>
-        <option value="scorer">Scorer</option>
-        <option value="viewer">Viewer</option>
+        <option value="admin">{tc('roles.admin')}</option>
+        <option value="scorer">{tc('roles.scorer')}</option>
+        <option value="viewer">{tc('roles.viewer')}</option>
       </Select>
     </Field>
   );
@@ -261,28 +260,33 @@ function RoleField({
 function InviteRow({
   invite,
   canRevoke,
+  locale,
   onRevoke,
 }: {
   invite: Invitation;
   canRevoke: boolean;
+  locale: string;
   onRevoke: () => void;
 }) {
+  const { t } = useTranslation('workspace');
+  const { t: tc } = useTranslation('common');
   return (
     <Card className="flex flex-wrap items-center gap-3 p-4">
       <Link2 className="h-4 w-4 shrink-0 text-[var(--muted-foreground)]" />
       <div className="min-w-0 flex-1">
         <strong className="text-sm font-semibold">
-          {invite.kind === 'email' ? invite.email : 'Link chia sẻ'}
+          {invite.kind === 'email' ? invite.email : t('members.shareLink')}
         </strong>
         <p className="m-0 text-sm text-[var(--muted-foreground)]">
-          {invite.role} · hết hạn {new Date(invite.expiresAt).toLocaleString('vi-VN')} ·{' '}
-          {invite.useCount || 0}/{invite.maxUses} lượt
+          {tc(`roles.${invite.role}`, { defaultValue: invite.role })} ·{' '}
+          {t('members.expires', { date: new Date(invite.expiresAt).toLocaleString(locale) })} ·{' '}
+          {t('members.uses', { used: invite.useCount || 0, max: invite.maxUses })}
         </p>
       </div>
       <Badge tone={invite.status === 'pending' ? 'success' : 'warning'}>{invite.status}</Badge>
       {canRevoke && invite.status === 'pending' && (
         <Button variant="ghost" className="text-[var(--destructive)]" onClick={onRevoke}>
-          Thu hồi
+          {t('members.revoke')}
         </Button>
       )}
     </Card>

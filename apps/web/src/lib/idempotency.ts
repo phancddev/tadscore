@@ -1,3 +1,5 @@
+import i18n from '../i18n';
+
 type RandomSource = {
   randomUUID?: () => string;
   getRandomValues?: (bytes: Uint8Array) => Uint8Array;
@@ -6,7 +8,7 @@ type RandomSource = {
 export function createIdempotencyKey(source: RandomSource | undefined = globalThis.crypto) {
   if (typeof source?.randomUUID === 'function') return source.randomUUID();
   if (typeof source?.getRandomValues !== 'function') {
-    throw new Error('Trình duyệt không hỗ trợ bộ sinh số ngẫu nhiên an toàn.');
+    throw new Error(i18n.t('errors.secureRandom'));
   }
 
   const bytes = new Uint8Array(16);

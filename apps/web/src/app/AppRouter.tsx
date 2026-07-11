@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom';
 import { AppLayout } from '../components/layout/AppLayout';
 import { WorkspaceLayout } from '../components/layout/WorkspaceLayout';
@@ -98,16 +99,17 @@ export function AppRouter() {
   );
 }
 function NotFound() {
+  const { t } = useTranslation('common');
   return (
     <main className="page-shell grid min-h-[70dvh] place-items-center text-center">
       <div className="space-y-2">
         <p className="m-0 text-sm text-[var(--muted-foreground)]">404</p>
-        <h1 className="m-0 text-2xl font-semibold tracking-tight">Không tìm thấy trang</h1>
+        <h1 className="m-0 text-2xl font-semibold tracking-tight">{t('notFound.title')}</h1>
         <a
           className="mt-4 inline-flex min-h-11 items-center text-sm font-medium underline-offset-4 hover:underline"
           href="/"
         >
-          Về trang chính
+          {t('notFound.home')}
         </a>
       </div>
     </main>

@@ -1,10 +1,12 @@
 import { Copy, ExternalLink, Eye, EyeOff, RefreshCcw } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { Field } from '../../components/ui/Field';
 import { Input } from '../../components/ui/Input';
 import { useToast } from '../../components/ui/Toast';
+import i18n from '../../i18n';
 import { api } from '../../lib/api';
 import type { PublicLink } from '../../lib/types';
 
@@ -13,10 +15,6 @@ const SLUG_RE = /^[a-z0-9][a-z0-9-]{2,79}$/;
 function absoluteUrl(path?: string | null) {
   if (!path) return '';
   return path.startsWith('http') ? path : `${location.origin}${path}`;
-}
-
-function visibilityLabel(enabled: boolean) {
-  return enabled ? 'Public' : 'Private (404)';
 }
 
 export function PublicLinkCard({
@@ -30,9 +28,13 @@ export function PublicLinkCard({
   readOnly: boolean;
   onRefresh: () => void;
 }) {
+  const { t: tr } = useTranslation('ranking');
   const toast = useToast();
   const [slugEdit, setSlugEdit] = useState(link.slug || '');
   const [busy, setBusy] = useState(false);
+  const locale = i18n.language?.startsWith('en') ? 'en-US' : 'vi-VN';
+  const visibilityLabel = (enabled: boolean) =>
+    enabled ? tr('linkCard.public') : tr('linkCard.private');
   useEffect(() => {
     setSlugEdit(link.slug || '');
   }, [link.slug, link.token, link.tokenEnabled, link.slugEnabled]);
@@ -41,16 +43,16 @@ export function PublicLinkCard({
   const copy = async (value: string, label: string) => {
     if (!value) return;
     await navigator.clipboard.writeText(value);
-    toast(`Đã sao chép ${label}`);
+    toast(tr('linkCard.copied', { label }));
   };
   const patch = async (value: Parameters<typeof api.workspaces.updatePublicLink>[2]) => {
     setBusy(true);
     try {
       await api.workspaces.updatePublicLink(workspaceId, link.id, value);
       onRefresh();
-      toast('Đã cập nhật link');
+      toast(tr('linkCard.updated'));
     } catch (error) {
-      toast(error instanceof Error ? error.message : 'Cập nhật thất bại');
+      toast(error instanceof Error ? error.message : tr('linkCard.updateFailed'));
     } finally {
       setBusy(false);
     }
@@ -58,48 +60,61 @@ export function PublicLinkCard({
   return (
     <Card className="grid gap-4 p-4">
       <div className="min-w-0">
-        <p className="m-0 text-sm font-medium">{link.label || 'Bảng xếp hạng'}</p>
+        <p className="m-0 text-sm font-medium">{link.label || tr('linkCard.defaultLabel')}</p>
         <p className="m-0 mt-0.5 text-sm text-[var(--muted-foreground)]">
-          Token: {visibilityLabel(link.tokenEnabled)} · Slug: {visibilityLabel(link.slugEnabled)}
+          {tr('linkCard.meta', {
+            tokenVis: visibilityLabel(link.tokenEnabled),
+            slugVis: visibilityLabel(link.slugEnabled),
+          })}
           {link.expiresAt
-            ? ` · hết hạn ${new Date(link.expiresAt).toLocaleString('vi-VN')}`
-            : ' · không hết hạn'}
+            ? tr('linkCard.expires', {
+                date: new Date(link.expiresAt).toLocaleString(locale),
+              })
+            : tr('linkCard.noExpiry')}
         </p>
       </div>
 
       <LinkRow
-        title="Link random token"
+        title={tr('linkCard.randomTitle')}
         url={tokenUrl}
         enabled={link.tokenEnabled}
-        emptyHint="Token cũ chỉ lưu hash — bấm Regenerate để hiện URL mới (link random cũ sẽ 404; slug giữ nguyên)."
-        onCopy={() => copy(tokenUrl, 'link random')}
+        emptyHint={tr('linkCard.emptyToken')}
+        onCopy={() => copy(tokenUrl, tr('linkCard.copyRandom'))}
         disabled={!tokenUrl}
         readOnly={readOnly}
         busy={busy}
         onToggle={() => patch({ tokenEnabled: !link.tokenEnabled })}
+        visibilityLabel={visibilityLabel}
+        copyLabel={tr('linkCard.copy')}
+        openLabel={tr('linkCard.open')}
+        makePrivateLabel={tr('linkCard.makePrivate')}
+        makePublicLabel={tr('linkCard.makePublic')}
       />
       <LinkRow
-        title="Link custom slug"
+        title={tr('linkCard.slugTitle')}
         url={slugUrl}
         enabled={link.slugEnabled}
-        emptyHint={
-          link.slug ? undefined : 'Chưa đặt slug — thêm bên dưới để có link đẹp song song.'
-        }
-        onCopy={() => copy(slugUrl, 'link slug')}
+        emptyHint={link.slug ? undefined : tr('linkCard.noSlug')}
+        onCopy={() => copy(slugUrl, tr('linkCard.copySlug'))}
         disabled={!slugUrl}
         readOnly={readOnly || !link.slug}
         busy={busy}
         onToggle={() => patch({ slugEnabled: !link.slugEnabled })}
+        visibilityLabel={visibilityLabel}
+        copyLabel={tr('linkCard.copy')}
+        openLabel={tr('linkCard.open')}
+        makePrivateLabel={tr('linkCard.makePrivate')}
+        makePublicLabel={tr('linkCard.makePublic')}
       />
 
       {!readOnly && (
         <div className="grid gap-3 border-t border-[var(--border)] pt-4">
-          <Field label="Custom slug (tùy chọn)" htmlFor="edit-public-slug">
+          <Field label={tr('linkCard.slugLabel')} htmlFor="edit-public-slug">
             <div className="flex flex-wrap gap-2">
               <Input
                 id="edit-public-slug"
                 className="min-w-[12rem] flex-1"
-                placeholder="vd: hoh-2026"
+                placeholder={tr('linkCard.slugPlaceholder')}
                 value={slugEdit}
                 onChange={(event) => setSlugEdit(event.target.value.toLowerCase())}
               />
@@ -109,13 +124,13 @@ export function PublicLinkCard({
                 onClick={() => {
                   const next = slugEdit.trim();
                   if (next && !SLUG_RE.test(next)) {
-                    toast('Slug không hợp lệ (a-z, 0-9, dấu -, 3–80 ký tự)');
+                    toast(tr('linkCard.invalidSlug'));
                     return;
                   }
                   void patch({ slug: next || null });
                 }}
               >
-                Lưu slug
+                {tr('linkCard.saveSlug')}
               </Button>
             </div>
           </Field>
@@ -124,26 +139,21 @@ export function PublicLinkCard({
               variant="ghost"
               loading={busy}
               onClick={async () => {
-                if (
-                  !confirm(
-                    'Tạo token random mới? Link random cũ sẽ 404. Link slug và trạng thái public/private giữ nguyên.',
-                  )
-                )
-                  return;
+                if (!confirm(tr('linkCard.regenerateConfirm'))) return;
                 setBusy(true);
                 try {
                   await api.workspaces.regeneratePublicLink(workspaceId, link.id);
                   onRefresh();
-                  toast('Đã regenerate token');
+                  toast(tr('linkCard.regenerated'));
                 } catch (error) {
-                  toast(error instanceof Error ? error.message : 'Regenerate thất bại');
+                  toast(error instanceof Error ? error.message : tr('linkCard.regenerateFailed'));
                 } finally {
                   setBusy(false);
                 }
               }}
             >
               <RefreshCcw className="h-4 w-4" />
-              Regenerate token
+              {tr('linkCard.regenerateToken')}
             </Button>
           </div>
         </div>
@@ -162,6 +172,11 @@ function LinkRow({
   readOnly,
   busy,
   onToggle,
+  visibilityLabel,
+  copyLabel,
+  openLabel,
+  makePrivateLabel,
+  makePublicLabel,
 }: {
   title: string;
   url: string;
@@ -172,6 +187,11 @@ function LinkRow({
   readOnly?: boolean;
   busy?: boolean;
   onToggle: () => void;
+  visibilityLabel: (enabled: boolean) => string;
+  copyLabel: string;
+  openLabel: string;
+  makePrivateLabel: string;
+  makePublicLabel: string;
 }) {
   return (
     <div className="rounded-[var(--radius)] border border-[var(--border)] bg-[var(--muted)]/30 p-3">
@@ -193,7 +213,7 @@ function LinkRow({
       <div className="mt-2 flex flex-wrap gap-2">
         <Button variant="secondary" disabled={disabled} onClick={onCopy}>
           <Copy className="h-4 w-4" />
-          Sao chép
+          {copyLabel}
         </Button>
         {url && (
           <a
@@ -203,13 +223,13 @@ function LinkRow({
             rel="noreferrer"
           >
             <ExternalLink className="h-4 w-4" />
-            Mở
+            {openLabel}
           </a>
         )}
         {!readOnly && (
           <Button variant="ghost" loading={busy} onClick={onToggle}>
             {enabled ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            {enabled ? 'Đặt private' : 'Đặt public'}
+            {enabled ? makePrivateLabel : makePublicLabel}
           </Button>
         )}
       </div>

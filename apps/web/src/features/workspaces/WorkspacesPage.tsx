@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowRight, Plus, Users } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
@@ -24,6 +25,7 @@ const slugify = (value: string) =>
     .slice(0, 80);
 
 export function WorkspacesPage() {
+  const { t } = useTranslation('workspace');
   const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
   const [slug, setSlug] = useState('');
@@ -36,7 +38,7 @@ export function WorkspacesPage() {
   const create = useMutation({
     mutationFn: () => {
       const selected = rules.data?.find((item) => `${item.id}:${item.version}` === rule);
-      if (!selected) throw new Error('Chọn một bộ luật');
+      if (!selected) throw new Error(t('create.ruleRequired'));
       return api.workspaces.create({
         name,
         slug,
@@ -55,12 +57,12 @@ export function WorkspacesPage() {
   return (
     <div className="page-shell">
       <PageHeader
-        title="Không gian làm việc"
-        description="Mỗi workspace giữ riêng bộ luật, thành viên và lịch sử điểm."
+        title={t('list.title')}
+        description={t('list.description')}
         actions={
           <Button onClick={() => setOpen(true)}>
             <Plus className="h-4 w-4" />
-            Tạo workspace
+            {t('list.create')}
           </Button>
         }
       />
@@ -69,10 +71,7 @@ export function WorkspacesPage() {
       ) : workspaces.isError ? (
         <ErrorState retry={() => workspaces.refetch()} />
       ) : !workspaces.data?.length ? (
-        <EmptyState
-          title="Chưa có workspace"
-          message="Tạo workspace đầu tiên để bắt đầu chấm điểm."
-        />
+        <EmptyState title={t('list.emptyTitle')} message={t('list.emptyMessage')} />
       ) : (
         <div className="grid-auto">
           {workspaces.data.map((item) => (
@@ -86,13 +85,13 @@ export function WorkspacesPage() {
                 </CardHeader>
                 <CardContent>
                   <p className="m-0 text-sm text-[var(--muted-foreground)]">
-                    {item.ruleId} · {item.ruleVersion}
+                    {t('list.rule', { id: item.ruleId, version: item.ruleVersion })}
                   </p>
                 </CardContent>
                 <CardFooter className="justify-between border-t border-[var(--border)] pt-4 text-sm">
                   <span className="flex items-center gap-2 text-[var(--muted-foreground)]">
                     <Users className="h-4 w-4" />
-                    {item.memberCount ?? '—'} thành viên
+                    {t('list.members', { count: item.memberCount ?? '—' })}
                   </span>
                   <ArrowRight className="h-4 w-4 text-[var(--muted-foreground)] transition-transform group-hover:translate-x-0.5" />
                 </CardFooter>
@@ -101,7 +100,7 @@ export function WorkspacesPage() {
           ))}
         </div>
       )}
-      <Modal open={open} onClose={() => setOpen(false)} title="Tạo workspace">
+      <Modal open={open} onClose={() => setOpen(false)} title={t('create.title')}>
         <form
           className="grid gap-4"
           onSubmit={(event) => {
@@ -109,7 +108,7 @@ export function WorkspacesPage() {
             create.mutate();
           }}
         >
-          <Field label="Tên workspace" htmlFor="workspace-name">
+          <Field label={t('create.name')} htmlFor="workspace-name">
             <Input
               id="workspace-name"
               required
@@ -118,10 +117,10 @@ export function WorkspacesPage() {
                 setName(event.target.value);
                 if (!slug) setSlug(slugify(event.target.value));
               }}
-              placeholder="Trại hè 2026"
+              placeholder={t('create.namePlaceholder')}
             />
           </Field>
-          <Field label="Slug" htmlFor="slug" hint="Dùng để nhận diện ngắn gọn, không chứa dấu.">
+          <Field label={t('create.slug')} htmlFor="slug" hint={t('create.slugHint')}>
             <Input
               id="slug"
               required
@@ -130,21 +129,21 @@ export function WorkspacesPage() {
               onChange={(event) => setSlug(slugify(event.target.value))}
             />
           </Field>
-          <Field label="Mô tả" htmlFor="description">
+          <Field label={t('create.description')} htmlFor="description">
             <Textarea
               id="description"
               value={description}
               onChange={(event) => setDescription(event.target.value)}
             />
           </Field>
-          <Field label="Bộ luật" htmlFor="rule">
+          <Field label={t('create.rule')} htmlFor="rule">
             <Select
               id="rule"
               required
               value={rule}
               onChange={(event) => setRule(event.target.value)}
             >
-              <option value="">Chọn bộ luật</option>
+              <option value="">{t('create.rulePlaceholder')}</option>
               {rules.data?.map((item) => (
                 <option key={`${item.id}:${item.version}`} value={`${item.id}:${item.version}`}>
                   {item.name} · {item.version}
@@ -158,7 +157,7 @@ export function WorkspacesPage() {
             </p>
           )}
           <Button type="submit" loading={create.isPending}>
-            Tạo workspace
+            {t('create.submit')}
           </Button>
         </form>
       </Modal>

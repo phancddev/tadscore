@@ -1,6 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { Camera, KeyRound, MailCheck, Save } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../app/AuthProvider';
 import { Alert } from '../../components/ui/Alert';
 import { Button } from '../../components/ui/Button';
@@ -12,6 +13,7 @@ import { useToast } from '../../components/ui/Toast';
 import { api } from '../../lib/api';
 
 export function ProfilePage() {
+  const { t } = useTranslation('auth');
   const { user, refresh } = useAuth();
   const toast = useToast();
   const [fullName, setFullName] = useState('');
@@ -36,9 +38,7 @@ export function ProfilePage() {
     onSuccess: (result) => {
       refresh();
       if (result.emailVerificationPending) setPendingEmail(email);
-      toast(
-        result.emailVerificationPending ? 'Đã gửi xác minh tới email mới' : 'Đã cập nhật hồ sơ',
-      );
+      toast(result.emailVerificationPending ? t('profile.emailPending') : t('profile.updated'));
     },
   });
   const verify = useMutation({
@@ -47,7 +47,7 @@ export function ProfilePage() {
       setPendingEmail('');
       setCode('');
       refresh();
-      toast('Email mới đã được xác minh');
+      toast(t('profile.emailVerified'));
     },
   });
   const password = useMutation({
@@ -55,23 +55,23 @@ export function ProfilePage() {
     onSuccess: () => {
       setCurrentPassword('');
       setNewPassword('');
-      toast('Đã đổi mật khẩu');
+      toast(t('profile.passwordChanged'));
     },
   });
   const upload = async (file?: File) => {
     if (!file) return;
-    if (file.size > 2_000_000) return toast('Ảnh phải nhỏ hơn 2 MB', 'error');
+    if (file.size > 2_000_000) return toast(t('profile.avatarTooLarge'), 'error');
     try {
       await api.auth.avatar(file);
       await refresh();
-      toast('Đã cập nhật ảnh đại diện');
+      toast(t('profile.avatarUpdated'));
     } catch (error) {
-      toast(error instanceof Error ? error.message : 'Không thể tải ảnh', 'error');
+      toast(error instanceof Error ? error.message : t('profile.avatarFailed'), 'error');
     }
   };
   return (
     <div className="page-shell max-w-5xl">
-      <PageHeader title="Hồ sơ cá nhân" description="Tài khoản" />
+      <PageHeader title={t('profile.title')} description={t('profile.description')} />
       <div className="grid gap-5 lg:grid-cols-[.7fr_1.3fr]">
         <Card>
           <CardContent className="pt-5">
@@ -83,13 +83,13 @@ export function ProfilePage() {
                 <img
                   className="absolute inset-0 h-full w-full object-cover"
                   src={user.avatarUrl}
-                  alt="Ảnh đại diện"
+                  alt={t('profile.avatarAlt')}
                 />
               )}
             </div>
             <label className="mx-auto mt-4 flex min-h-11 w-fit cursor-pointer items-center gap-2 rounded-[var(--radius)] border border-[var(--border)] px-4 text-sm font-medium hover:bg-[var(--muted)]">
               <Camera className="h-4 w-4" />
-              Đổi ảnh
+              {t('profile.changePhoto')}
               <input
                 className="sr-only"
                 type="file"
@@ -98,14 +98,14 @@ export function ProfilePage() {
               />
             </label>
             <p className="mt-3 text-center text-xs text-[var(--muted-foreground)]">
-              JPEG, PNG hoặc WebP · tối đa 2 MB
+              {t('profile.photoHint')}
             </p>
           </CardContent>
         </Card>
         <div className="grid gap-5">
           <Card>
             <CardHeader>
-              <CardTitle>Thông tin hiển thị</CardTitle>
+              <CardTitle>{t('profile.displayInfo')}</CardTitle>
             </CardHeader>
             <CardContent>
               <form
@@ -115,20 +115,30 @@ export function ProfilePage() {
                   save.mutate();
                 }}
               >
-                <ProfileField id="full-name" label="Họ và tên" value={fullName} set={setFullName} />
-                <ProfileField id="username" label="Username" value={username} set={setUsername} />
+                <ProfileField
+                  id="full-name"
+                  label={t('profile.fullName')}
+                  value={fullName}
+                  set={setFullName}
+                />
+                <ProfileField
+                  id="username"
+                  label={t('register.username')}
+                  value={username}
+                  set={setUsername}
+                />
                 <ProfileField
                   id="email"
-                  label="Email"
+                  label={t('profile.email')}
                   type="email"
                   value={email}
                   set={setEmail}
-                  hint="Email mới chỉ có hiệu lực sau khi xác minh."
+                  hint={t('profile.emailHint')}
                 />
                 {save.error && <Alert variant="destructive">{save.error.message}</Alert>}
                 <Button loading={save.isPending} className="justify-self-start">
                   <Save className="h-4 w-4" />
-                  Lưu thay đổi
+                  {t('profile.save')}
                 </Button>
               </form>
             </CardContent>
@@ -136,7 +146,7 @@ export function ProfilePage() {
           {pendingEmail && (
             <Card className="border-[var(--warning)]/30">
               <CardHeader>
-                <CardTitle>Xác minh {pendingEmail}</CardTitle>
+                <CardTitle>{t('profile.verifyPending', { email: pendingEmail })}</CardTitle>
               </CardHeader>
               <CardContent>
                 <form
@@ -148,7 +158,7 @@ export function ProfilePage() {
                 >
                   <ProfileField
                     id="email-code"
-                    label="Mã 6 chữ số"
+                    label={t('profile.code')}
                     value={code}
                     set={(value) => setCode(value.replace(/\D/g, '').slice(0, 6))}
                   />
@@ -158,7 +168,7 @@ export function ProfilePage() {
                     className="justify-self-start"
                   >
                     <MailCheck className="h-4 w-4" />
-                    Xác minh email
+                    {t('profile.verifyEmail')}
                   </Button>
                 </form>
               </CardContent>
@@ -166,7 +176,7 @@ export function ProfilePage() {
           )}
           <Card>
             <CardHeader>
-              <CardTitle>Đổi mật khẩu</CardTitle>
+              <CardTitle>{t('profile.changePassword')}</CardTitle>
             </CardHeader>
             <CardContent>
               <form
@@ -178,18 +188,18 @@ export function ProfilePage() {
               >
                 <ProfileField
                   id="current-password"
-                  label="Mật khẩu hiện tại"
+                  label={t('profile.currentPassword')}
                   type="password"
                   value={currentPassword}
                   set={setCurrentPassword}
                 />
                 <ProfileField
                   id="new-password"
-                  label="Mật khẩu mới"
+                  label={t('profile.newPassword')}
                   type="password"
                   value={newPassword}
                   set={setNewPassword}
-                  hint="Ít nhất 10 ký tự."
+                  hint={t('profile.passwordHint')}
                 />
                 <label className="flex min-h-11 items-center gap-3 text-sm">
                   <input
@@ -197,7 +207,7 @@ export function ProfilePage() {
                     checked={logoutOthers}
                     onChange={(event) => setLogoutOthers(event.target.checked)}
                   />
-                  Đăng xuất các phiên khác
+                  {t('profile.logoutOthers')}
                 </label>
                 <Button
                   variant="secondary"
@@ -205,7 +215,7 @@ export function ProfilePage() {
                   className="justify-self-start"
                 >
                   <KeyRound className="h-4 w-4" />
-                  Đổi mật khẩu
+                  {t('profile.submitPassword')}
                 </Button>
               </form>
             </CardContent>

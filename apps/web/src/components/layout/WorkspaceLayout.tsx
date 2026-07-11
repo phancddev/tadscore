@@ -1,24 +1,26 @@
 import { Activity, History, Home, LayoutDashboard, Settings, Trophy, Users } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { NavLink, Outlet, useParams } from 'react-router-dom';
 import { cn } from '../../lib/cn';
 
 export function WorkspaceLayout() {
+  const { t } = useTranslation('common');
   const { workspaceId } = useParams();
   const tabs = [
-    ['', 'Tổng quan', LayoutDashboard],
-    ['teams', 'Nhà', Home],
-    ['score', 'Nhập điểm', Activity],
-    ['ranking', 'Xếp hạng', Trophy],
-    ['members', 'Thành viên', Users],
-    ['ledger', 'Lịch sử', History],
-    ['settings', 'Cài đặt', Settings],
+    ['', t('nav.overview'), LayoutDashboard],
+    ['teams', t('nav.teams'), Home],
+    ['score', t('nav.score'), Activity],
+    ['ranking', t('nav.ranking'), Trophy],
+    ['members', t('nav.members'), Users],
+    ['ledger', t('nav.ledger'), History],
+    ['settings', t('nav.settings'), Settings],
   ] as const;
   return (
     <div>
       <div className="no-print overflow-x-auto border-b border-[var(--border)] bg-[var(--card)]">
         <nav
           className="mx-auto flex w-max min-w-full max-w-[1280px] gap-1 px-3"
-          aria-label="Không gian làm việc"
+          aria-label={t('nav.workspace')}
         >
           {tabs.map(([path, label, Icon]) => (
             <NavLink

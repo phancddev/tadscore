@@ -1,18 +1,22 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Cloud, CloudOff, LockKeyhole } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 import { Alert } from '../../components/ui/Alert';
 import { Badge } from '../../components/ui/Badge';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { ErrorState, LoadingState } from '../../components/ui/State';
 import { useToast } from '../../components/ui/Toast';
+import i18n from '../../i18n';
 import { api } from '../../lib/api';
 import { createIdempotencyKey } from '../../lib/idempotency';
 import { QuickActions, shopConfigFromRanking, type QuickAction } from './QuickActions';
 import { RankEntry } from './RankEntry';
 
 export function ScorePage() {
+  const { t } = useTranslation('scoring');
+  const { t: tc } = useTranslation('common');
   const { workspaceId = '' } = useParams();
   const client = useQueryClient();
   const toast = useToast();
@@ -57,7 +61,7 @@ export function ScorePage() {
         results: Object.entries(ranks).map(([teamId, rank]) => ({ teamId, rank })),
         idempotencyKey: createIdempotencyKey(),
       }),
-    onSuccess: () => success('Đã lưu kết quả tất cả đội'),
+    onSuccess: () => success(t('page.savedRanks')),
   });
   const quick = useMutation({
     mutationFn: (data: QuickAction) =>
@@ -71,8 +75,8 @@ export function ScorePage() {
     onSuccess: (_result, data) =>
       success(
         data.value > 0
-          ? `Đã cộng ${data.value} huy hiệu`
-          : `Đã trừ ${Math.abs(data.value)} huy hiệu`,
+          ? t('page.medalAdded', { value: data.value })
+          : t('page.medalRemoved', { value: Math.abs(data.value) }),
       ),
   });
   const purchase = useMutation({
@@ -85,7 +89,9 @@ export function ScorePage() {
       }),
     onSuccess: (_result, data) =>
       success(
-        data.mode === 'piece' ? `Đã mua ${data.value} mảnh ghép` : `Đã mua ${data.value} vật phẩm`,
+        data.mode === 'piece'
+          ? t('page.boughtPiece', { value: data.value })
+          : t('page.boughtItem', { value: data.value }),
       ),
   });
   if (workspace.isLoading || ranking.isLoading || activities.isLoading)
@@ -109,16 +115,20 @@ export function ScorePage() {
   const canScore =
     workspace.data?.status === 'active' &&
     ['owner', 'admin', 'scorer'].includes(workspace.data.role);
+  const statusKey = workspace.data?.status || '';
   const disabledReason =
     workspace.data?.status !== 'active'
-      ? `Workspace đang ${workspace.data?.status}; mọi thao tác chấm điểm đã tắt.`
-      : 'Bạn chỉ có quyền xem workspace này.';
+      ? t('page.locked', {
+          status: tc(`status.${statusKey}`, { defaultValue: statusKey }),
+        })
+      : t('page.viewerOnly');
   const shop = shopConfigFromRanking(ranking.data);
+  const locale = i18n.language?.startsWith('en') ? 'en-US' : 'vi-VN';
   return (
     <div className="page-shell">
       <PageHeader
-        title="Nhập điểm"
-        description="Thiết kế cho thao tác nhanh trên điện thoại và máy tính."
+        title={t('page.title')}
+        description={t('page.description')}
         actions={
           <Badge tone={online ? 'outline' : 'danger'} className="gap-1.5 font-normal">
             {online ? (
@@ -128,8 +138,13 @@ export function ScorePage() {
             )}
             <span className={online ? 'text-[var(--muted-foreground)]' : undefined}>
               {online
-                ? `Đã kết nối · ${updated.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`
-                : 'Mất kết nối'}
+                ? t('page.connected', {
+                    time: updated.toLocaleTimeString(locale, {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    }),
+                  })
+                : t('page.disconnected')}
             </span>
           </Badge>
         }
@@ -143,7 +158,7 @@ export function ScorePage() {
       {!online && (
         <Alert variant="destructive" className="mb-5">
           <CloudOff className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-          <span>Mất kết nối mạng. Các thao tác chấm điểm tạm thời bị tắt.</span>
+          <span>{t('page.offline')}</span>
         </Alert>
       )}
       {(game.error || quick.error || purchase.error) && (

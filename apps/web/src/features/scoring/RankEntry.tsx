@@ -1,5 +1,6 @@
 import { Check } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '../../components/ui/Button';
 import {
   Card,
@@ -33,6 +34,7 @@ export function RankEntry({
   disabled?: boolean;
   onSubmit: (activityKey: string, ranks: Record<string, number>) => void;
 }) {
+  const { t } = useTranslation('scoring');
   const [activityKey, setActivityKey] = useState('');
   const [ranks, setRanks] = useState<Record<string, number>>({});
   const [confirming, setConfirming] = useState(false);
@@ -61,13 +63,11 @@ export function RankEntry({
   return (
     <Card aria-labelledby="rank-title">
       <CardHeader>
-        <CardTitle id="rank-title">Xếp hạng game</CardTitle>
-        <CardDescription>
-          Mỗi hạng chỉ thuộc về một đội. Lưu đồng thời toàn bộ kết quả.
-        </CardDescription>
+        <CardTitle id="rank-title">{t('rank.title')}</CardTitle>
+        <CardDescription>{t('rank.description')}</CardDescription>
       </CardHeader>
       <CardContent className="grid gap-5">
-        <Field label="Hoạt động" htmlFor="activity">
+        <Field label={t('rank.activity')} htmlFor="activity">
           <Select
             id="activity"
             disabled={disabled}
@@ -78,7 +78,7 @@ export function RankEntry({
               setConfirming(false);
             }}
           >
-            <option value="">Chọn hoạt động</option>
+            <option value="">{t('rank.activityPlaceholder')}</option>
             {available.map((activity) => (
               <option key={activity.id} value={activity.activityKey}>
                 {activity.name}
@@ -116,7 +116,7 @@ export function RankEntry({
                           : 'border-[var(--border)] bg-transparent text-[var(--foreground)] hover:bg-[var(--muted)]',
                       )}
                     >
-                      Hạng {rank}
+                      {t('rank.place', { rank })}
                       {selected && (
                         <Check className="absolute right-1 top-1 h-3.5 w-3.5" aria-hidden />
                       )}
@@ -129,25 +129,23 @@ export function RankEntry({
         </div>
         {!valid && Object.keys(ranks).length > 0 && (
           <p role="status" className="m-0 text-sm text-[var(--warning)]">
-            Chọn đủ và không trùng hạng cho tất cả đội.
+            {t('rank.incomplete')}
           </p>
         )}
         {confirming ? (
           <div className="rounded-[var(--radius)] border border-[var(--border)] bg-[var(--muted)]/40 p-4">
-            <strong className="text-sm font-semibold">Xác nhận lưu kết quả?</strong>
-            <p className="my-2 text-sm text-[var(--muted-foreground)]">
-              Kết quả sẽ được lưu trong một giao dịch nguyên tử.
-            </p>
+            <strong className="text-sm font-semibold">{t('rank.confirmTitle')}</strong>
+            <p className="my-2 text-sm text-[var(--muted-foreground)]">{t('rank.confirmBody')}</p>
             <div className="flex flex-wrap gap-2">
               <Button
                 className="flex-1"
                 loading={saving}
                 onClick={() => onSubmit(activityKey, ranks)}
               >
-                Xác nhận
+                {t('rank.confirm')}
               </Button>
               <Button variant="secondary" onClick={() => setConfirming(false)}>
-                Quay lại
+                {t('rank.back')}
               </Button>
             </div>
           </div>
@@ -157,7 +155,7 @@ export function RankEntry({
             disabled={disabled || !activityKey || !valid}
             onClick={() => setConfirming(true)}
           >
-            Kiểm tra & lưu kết quả
+            {t('rank.checkSave')}
           </Button>
         )}
       </CardContent>

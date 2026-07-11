@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { RotateCcw, Search } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
@@ -9,14 +10,18 @@ import { Input } from '../../components/ui/Input';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { EmptyState, ErrorState, LoadingState } from '../../components/ui/State';
 import { useToast } from '../../components/ui/Toast';
+import i18n from '../../i18n';
 import { api } from '../../lib/api';
 import { cn } from '../../lib/cn';
 
 export function LedgerPage() {
+  const { t } = useTranslation('scoring');
+  const { t: tc } = useTranslation('common');
   const { workspaceId = '' } = useParams();
   const [filter, setFilter] = useState('');
   const client = useQueryClient();
   const toast = useToast();
+  const locale = i18n.language?.startsWith('en') ? 'en-US' : 'vi-VN';
   const ledger = useQuery({
     queryKey: ['ledger', workspaceId],
     queryFn: () => api.scoring.ledger(workspaceId),
@@ -31,7 +36,7 @@ export function LedgerPage() {
     onSuccess: () => {
       client.invalidateQueries({ queryKey: ['ledger', workspaceId] });
       client.invalidateQueries({ queryKey: ['ranking', workspaceId] });
-      toast('Đã tạo giao dịch đảo ngược');
+      toast(t('ledger.reversed'));
     },
   });
   const allItems = ledger.data || [];
@@ -47,19 +52,16 @@ export function LedgerPage() {
     workspace.data?.status === 'active' && ['owner', 'admin'].includes(workspace.data.role);
   return (
     <div className="page-shell">
-      <PageHeader
-        title="Lịch sử điểm"
-        description="Không sửa hoặc xóa trực tiếp; giao dịch điều chỉnh và mua hàng có thể đảo ngược với lý do."
-      />
+      <PageHeader title={t('ledger.title')} description={t('ledger.description')} />
       <label className="relative mb-4 block max-w-md">
-        <span className="sr-only">Tìm lịch sử</span>
+        <span className="sr-only">{t('ledger.searchLabel')}</span>
         <Search
           className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--muted-foreground)]"
           aria-hidden
         />
         <Input
           className="pl-10"
-          placeholder="Tìm đội, hoạt động…"
+          placeholder={t('ledger.searchPlaceholder')}
           value={filter}
           onChange={(event) => setFilter(event.target.value)}
         />
@@ -69,10 +71,7 @@ export function LedgerPage() {
       ) : ledger.isError ? (
         <ErrorState retry={() => ledger.refetch()} />
       ) : !items.length ? (
-        <EmptyState
-          title="Không có giao dịch"
-          message="Các lần nhập điểm và mua vật phẩm sẽ xuất hiện tại đây."
-        />
+        <EmptyState title={t('ledger.emptyTitle')} message={t('ledger.emptyMessage')} />
       ) : (
         <div className="grid gap-3">
           {items.map((entry) => (
@@ -82,23 +81,23 @@ export function LedgerPage() {
                   <div className="flex flex-wrap items-center gap-2">
                     <h2 className="m-0 text-sm font-semibold">{entry.teamName}</h2>
                     <Badge tone="outline">{entry.entryType}</Badge>
-                    {entry.reversesEntryId && <Badge tone="warning">Giao dịch đảo</Badge>}
+                    {entry.reversesEntryId && <Badge tone="warning">{t('ledger.reversal')}</Badge>}
                     {entry.entryType === 'activity_award' && (
-                      <Badge tone="neutral">Sửa theo toàn bộ game</Badge>
+                      <Badge tone="neutral">{t('ledger.bulkEdit')}</Badge>
                     )}
                   </div>
                   <p className="m-0 mt-1 text-sm text-[var(--muted-foreground)]">
                     {entry.activityName ||
-                      String(entry.metadata?.reason || entry.metadata?.kind || 'Điều chỉnh')}
+                      String(entry.metadata?.reason || entry.metadata?.kind || t('ledger.adjustment'))}
                   </p>
                   <p className="m-0 mt-1 text-xs text-[var(--muted-foreground)]">
-                    {new Date(entry.createdAt).toLocaleString('vi-VN')} · {entry.createdByName}
+                    {new Date(entry.createdAt).toLocaleString(locale)} · {entry.createdByName}
                   </p>
                 </div>
                 <div className="flex items-center gap-3 text-right tabular">
-                  <Delta value={entry.medalDelta} label="Huy hiệu" />
-                  <Delta value={entry.pieceDelta} label="Mảnh" />
-                  <Delta value={entry.itemDelta} label="Vật phẩm" />
+                  <Delta value={entry.medalDelta} label={tc('metrics.medals')} />
+                  <Delta value={entry.pieceDelta} label={tc('metrics.piece')} />
+                  <Delta value={entry.itemDelta} label={tc('metrics.items')} />
                 </div>
                 {canReverse &&
                   ['adjustment', 'penalty', 'purchase'].includes(entry.entryType) &&
@@ -107,14 +106,14 @@ export function LedgerPage() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      aria-label={`Đảo ngược giao dịch của ${entry.teamName}`}
+                      aria-label={t('ledger.reverseAria', { team: entry.teamName })}
                       onClick={() => {
-                        const reason = prompt('Lý do đảo ngược?');
+                        const reason = prompt(t('ledger.reasonPrompt'));
                         if (reason?.trim()) reverse.mutate({ id: entry.id, reason: reason.trim() });
                       }}
                     >
                       <RotateCcw className="h-4 w-4" />
-                      Đảo ngược
+                      {t('ledger.reverse')}
                     </Button>
                   )}
               </CardContent>

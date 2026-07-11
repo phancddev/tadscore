@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Field } from '../../components/ui/Field';
 import { Input } from '../../components/ui/Input';
 
@@ -33,15 +34,16 @@ export function TeamColorField({
   value: string;
   onChange: (color: string) => void;
 }) {
+  const { t } = useTranslation('workspace');
   const selected = toColorInputValue(value);
   return (
-    <Field label="Màu" htmlFor="team-color" hint="Bấm ô vuông để mở bảng chọn màu.">
+    <Field label={t('color.label')} htmlFor="team-color" hint={t('color.hint')}>
       <div className="grid gap-3">
         <div className="flex items-center gap-3">
           <input
             id="team-color-picker"
             type="color"
-            aria-label="Chọn màu"
+            aria-label={t('color.pick')}
             value={selected}
             onChange={(event) => onChange(event.target.value)}
             className="h-11 w-14 cursor-pointer rounded-[var(--radius)] border border-[var(--border)] bg-[var(--card)] p-1"
@@ -56,7 +58,7 @@ export function TeamColorField({
             autoComplete="off"
           />
         </div>
-        <div className="flex flex-wrap gap-2" role="list" aria-label="Màu gợi ý">
+        <div className="flex flex-wrap gap-2" role="list" aria-label={t('color.preset')}>
           {PRESET_COLORS.map((color) => {
             const active = selected === color;
             return (
@@ -64,7 +66,7 @@ export function TeamColorField({
                 key={color}
                 type="button"
                 role="listitem"
-                aria-label={`Chọn ${color}`}
+                aria-label={t('color.pickNamed', { color })}
                 aria-pressed={active}
                 title={color}
                 onClick={() => onChange(color)}

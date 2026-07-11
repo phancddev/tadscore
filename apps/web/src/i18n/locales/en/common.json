@@ -1,0 +1,87 @@
+{
+  "language": {
+    "label": "Language",
+    "vi": "Tiếng Việt",
+    "en": "English",
+    "switchTo": "Switch to {{language}}"
+  },
+  "nav": {
+    "main": "Main navigation",
+    "quick": "Quick navigation",
+    "skip": "Skip navigation",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "workspaces": "Workspaces",
+    "profile": "Profile",
+    "admin": "Admin",
+    "logout": "Log out",
+    "workspace": "Workspace",
+    "overview": "Overview",
+    "teams": "Houses",
+    "score": "Scoring",
+    "ranking": "Ranking",
+    "members": "Members",
+    "ledger": "History",
+    "settings": "Settings"
+  },
+  "actions": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "close": "Close",
+    "retry": "Retry",
+    "create": "Create",
+    "edit": "Edit",
+    "delete": "Delete",
+    "confirm": "Confirm",
+    "back": "Back",
+    "copy": "Copy",
+    "open": "Open",
+    "search": "Search"
+  },
+  "states": {
+    "loading": "Loading",
+    "loadError": "Could not load data. Please try again.",
+    "requestFailed": "Request failed"
+  },
+  "notFound": {
+    "title": "Page not found",
+    "home": "Back to home"
+  },
+  "roles": {
+    "owner": "Owner",
+    "admin": "Admin",
+    "scorer": "Scorer",
+    "viewer": "Viewer",
+    "super_admin": "Super admin",
+    "user": "User"
+  },
+  "status": {
+    "active": "Active",
+    "locked": "Locked",
+    "suspended": "Suspended",
+    "archived": "Archived",
+    "pending": "Pending",
+    "draft": "Draft",
+    "open": "Open",
+    "finalized": "Finalized",
+    "removed": "Removed"
+  },
+  "metrics": {
+    "medals": "Medals",
+    "pieces": "Pieces",
+    "items": "Items",
+    "piece": "Piece"
+  },
+  "errors": {
+    "secureRandom": "This browser does not support a secure random number generator."
+  },
+  "toast": {
+    "close": "Dismiss notification"
+  },
+  "modal": {
+    "close": "Close"
+  },
+  "brand": {
+    "tagline": "Event scoring"
+  }
+}

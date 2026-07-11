@@ -1,5 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
 import { z } from 'zod';
 import { Alert } from '../../components/ui/Alert';
@@ -9,22 +11,36 @@ import { Input } from '../../components/ui/Input';
 import { api } from '../../lib/api';
 import { AuthShell } from './AuthShell';
 
-const schema = z
-  .object({
-    fullName: z.string().min(2, 'Nhập họ tên'),
-    email: z.email('Email không hợp lệ'),
-    username: z
-      .string()
-      .min(3, 'Tối thiểu 3 ký tự')
-      .regex(/^[a-zA-Z0-9_.-]+$/, 'Chỉ dùng chữ, số, dấu chấm, gạch'),
-    password: z.string().min(10, 'Tối thiểu 10 ký tự'),
-    confirm: z.string(),
-  })
-  .refine((v) => v.password === v.confirm, { path: ['confirm'], message: 'Mật khẩu chưa khớp' });
-type FormData = z.infer<typeof schema>;
+type FormData = {
+  fullName: string;
+  email: string;
+  username: string;
+  password: string;
+  confirm: string;
+};
 
 export function RegisterPage() {
+  const { t } = useTranslation('auth');
   const navigate = useNavigate();
+  const schema = useMemo(
+    () =>
+      z
+        .object({
+          fullName: z.string().min(2, t('register.fullNameMin')),
+          email: z.email(t('register.emailInvalid')),
+          username: z
+            .string()
+            .min(3, t('register.usernameMin'))
+            .regex(/^[a-zA-Z0-9_.-]+$/, t('register.usernamePattern')),
+          password: z.string().min(10, t('register.passwordMin')),
+          confirm: z.string(),
+        })
+        .refine((v) => v.password === v.confirm, {
+          path: ['confirm'],
+          message: t('register.passwordMismatch'),
+        }),
+    [t],
+  );
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: { fullName: '', email: '', username: '', password: '', confirm: '' },
@@ -39,7 +55,7 @@ export function RegisterPage() {
       else navigate('/login', { state: { registered: true } });
     } catch (error) {
       form.setError('root', {
-        message: error instanceof Error ? error.message : 'Không thể đăng ký',
+        message: error instanceof Error ? error.message : t('register.failed'),
       });
     }
   });
@@ -55,26 +71,26 @@ export function RegisterPage() {
     </Field>
   );
   return (
-    <AuthShell title="Tạo tài khoản" subtitle="Bắt đầu một không gian chấm điểm mới.">
+    <AuthShell title={t('register.title')} subtitle={t('register.subtitle')}>
       <form className="grid gap-4" onSubmit={submit} noValidate>
-        {field('fullName', 'Họ và tên', 'text', 'name')}
-        {field('email', 'Email', 'email', 'email')}
-        {field('username', 'Username', 'text', 'username')}
-        {field('password', 'Mật khẩu', 'password', 'new-password')}
-        {field('confirm', 'Nhập lại mật khẩu', 'password', 'new-password')}
+        {field('fullName', t('register.fullName'), 'text', 'name')}
+        {field('email', t('register.email'), 'email', 'email')}
+        {field('username', t('register.username'), 'text', 'username')}
+        {field('password', t('register.password'), 'password', 'new-password')}
+        {field('confirm', t('register.confirm'), 'password', 'new-password')}
         {form.formState.errors.root && (
           <Alert variant="destructive">{form.formState.errors.root.message}</Alert>
         )}
         <Button type="submit" loading={form.formState.isSubmitting}>
-          Tạo tài khoản
+          {t('register.submit')}
         </Button>
         <p className="text-center text-sm text-[var(--muted-foreground)]">
-          Đã có tài khoản?{' '}
+          {t('register.hasAccount')}{' '}
           <Link
             className="font-medium text-[var(--foreground)] underline-offset-4 hover:underline"
             to="/login"
           >
-            Đăng nhập
+            {t('register.login')}
           </Link>
         </p>
       </form>

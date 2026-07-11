@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Archive, LockKeyhole, Save } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 import { Button } from '../../components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
@@ -13,6 +14,7 @@ import { useToast } from '../../components/ui/Toast';
 import { api } from '../../lib/api';
 
 export function SettingsPage() {
+  const { t } = useTranslation('workspace');
   const { workspaceId = '' } = useParams();
   const toast = useToast();
   const client = useQueryClient();
@@ -31,7 +33,7 @@ export function SettingsPage() {
       api.workspaces.update(workspaceId, value),
     onSuccess: () => {
       client.invalidateQueries({ queryKey: ['workspace', workspaceId] });
-      toast('Đã cập nhật workspace');
+      toast(t('settings.updated'));
     },
   });
   if (query.isLoading)
@@ -49,10 +51,10 @@ export function SettingsPage() {
   const canManage = ['owner', 'admin'].includes(query.data.role);
   return (
     <div className="page-shell max-w-4xl">
-      <PageHeader title="Cài đặt workspace" />
+      <PageHeader title={t('settings.title')} />
       <Card>
         <CardHeader>
-          <CardTitle>Thông tin chung</CardTitle>
+          <CardTitle>{t('settings.general')}</CardTitle>
         </CardHeader>
         <CardContent>
           <form
@@ -62,7 +64,7 @@ export function SettingsPage() {
               update.mutate({ name, description });
             }}
           >
-            <Field label="Tên workspace" htmlFor="settings-name">
+            <Field label={t('settings.name')} htmlFor="settings-name">
               <Input
                 id="settings-name"
                 disabled={!canManage}
@@ -70,7 +72,7 @@ export function SettingsPage() {
                 onChange={(event) => setName(event.target.value)}
               />
             </Field>
-            <Field label="Mô tả" htmlFor="settings-description">
+            <Field label={t('settings.description')} htmlFor="settings-description">
               <Textarea
                 id="settings-description"
                 disabled={!canManage}
@@ -78,7 +80,7 @@ export function SettingsPage() {
                 onChange={(event) => setDescription(event.target.value)}
               />
             </Field>
-            <Field label="Bộ luật đã khóa phiên bản">
+            <Field label={t('settings.lockedRule')}>
               <div
                 className="rounded-[var(--radius)] border border-[var(--border)] bg-[var(--muted)]/50 px-3 py-2 text-sm"
                 aria-readonly="true"
@@ -94,7 +96,7 @@ export function SettingsPage() {
             {canManage && (
               <Button className="justify-self-start" loading={update.isPending}>
                 <Save className="h-4 w-4" />
-                Lưu thay đổi
+                {t('settings.save')}
               </Button>
             )}
           </form>
@@ -103,12 +105,10 @@ export function SettingsPage() {
       {canManage && (
         <Card className="mt-5 border-[var(--destructive)]/40">
           <CardHeader>
-            <CardTitle className="text-[var(--destructive)]">Trạng thái sự kiện</CardTitle>
+            <CardTitle className="text-[var(--destructive)]">{t('settings.statusTitle')}</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-4">
-            <p className="m-0 text-sm text-[var(--muted-foreground)]">
-              Khóa để ngừng nhập điểm tạm thời; lưu trữ khi sự kiện đã kết thúc.
-            </p>
+            <p className="m-0 text-sm text-[var(--muted-foreground)]">{t('settings.statusHelp')}</p>
             <div className="flex flex-wrap gap-2">
               <Button
                 variant="secondary"
@@ -118,18 +118,17 @@ export function SettingsPage() {
                 }
               >
                 <LockKeyhole className="h-4 w-4" />
-                {query.data.status === 'locked' ? 'Mở khóa' : 'Khóa nhập điểm'}
+                {query.data.status === 'locked' ? t('settings.unlock') : t('settings.lock')}
               </Button>
               <Button
                 variant="danger"
                 disabled={query.data.status === 'archived' || query.data.status === 'suspended'}
                 onClick={() =>
-                  confirm('Lưu trữ workspace này? Dữ liệu sẽ chuyển sang chỉ đọc.') &&
-                  update.mutate({ status: 'archived' })
+                  confirm(t('settings.confirmArchive')) && update.mutate({ status: 'archived' })
                 }
               >
                 <Archive className="h-4 w-4" />
-                Lưu trữ
+                {t('settings.archive')}
               </Button>
             </div>
           </CardContent>

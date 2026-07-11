@@ -1,5 +1,6 @@
 import { useMutation } from '@tanstack/react-query';
 import { CheckCircle2, Link2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Brand } from '../../components/layout/Brand';
 import { Alert } from '../../components/ui/Alert';
@@ -8,6 +9,7 @@ import { Card, CardContent } from '../../components/ui/Card';
 import { api } from '../../lib/api';
 
 export function JoinPage() {
+  const { t } = useTranslation('workspace');
   const { token = '' } = useParams();
   const navigate = useNavigate();
   const join = useMutation({
@@ -21,15 +23,13 @@ export function JoinPage() {
           <Brand />
           <Link2 className="mx-auto mt-4 h-10 w-10 text-[var(--muted-foreground)]" />
           <div className="space-y-1">
-            <h1 className="m-0 text-2xl font-semibold tracking-tight">Tham gia workspace</h1>
-            <p className="m-0 text-sm text-[var(--muted-foreground)]">
-              Xác nhận để sử dụng quyền được cấp trong lời mời này.
-            </p>
+            <h1 className="m-0 text-2xl font-semibold tracking-tight">{t('join.title')}</h1>
+            <p className="m-0 text-sm text-[var(--muted-foreground)]">{t('join.subtitle')}</p>
           </div>
           {join.error && <Alert variant="destructive">{join.error.message}</Alert>}
           <Button className="w-full" loading={join.isPending} onClick={() => join.mutate()}>
             <CheckCircle2 className="h-4 w-4" />
-            Xác nhận tham gia
+            {t('join.confirm')}
           </Button>
         </CardContent>
       </Card>

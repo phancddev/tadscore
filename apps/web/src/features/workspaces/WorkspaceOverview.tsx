@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { ArrowRight, Gem, Medal, Package, Radio, Users } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router-dom';
 import { Alert } from '../../components/ui/Alert';
 import { Badge } from '../../components/ui/Badge';
@@ -10,6 +11,8 @@ import { ErrorState, LoadingState } from '../../components/ui/State';
 import { api } from '../../lib/api';
 
 export function WorkspaceOverview() {
+  const { t } = useTranslation('workspace');
+  const { t: tc } = useTranslation('common');
   const { workspaceId = '' } = useParams();
   const workspace = useQuery({
     queryKey: ['workspace', workspaceId],
@@ -36,13 +39,15 @@ export function WorkspaceOverview() {
         />
       </div>
     );
+  const status = workspace.data?.status || '';
+  const statusLabel = status ? tc(`status.${status}`, { defaultValue: status }) : status;
   return (
     <div className="page-shell">
       <PageHeader
         title={workspace.data?.name || ''}
-        description={`${workspace.data?.ruleId} · Phiên bản luật ${workspace.data?.ruleVersion}${
-          workspace.data?.description ? ` · ${workspace.data.description}` : ''
-        }`}
+        description={`${workspace.data?.ruleId} · ${t('overview.ruleVersion', {
+          version: workspace.data?.ruleVersion,
+        })}${workspace.data?.description ? ` · ${workspace.data.description}` : ''}`}
         actions={
           <Badge tone={workspace.data?.status === 'active' ? 'success' : 'warning'}>
             {workspace.data?.status}
@@ -51,22 +56,19 @@ export function WorkspaceOverview() {
       />
       {workspace.data?.status !== 'active' && (
         <Alert variant="warning" className="mb-5">
-          <span>
-            Workspace đang ở trạng thái <strong>{workspace.data?.status}</strong>. Dữ liệu chỉ đọc
-            và thao tác nhập điểm đã tắt.
-          </span>
+          <span>{t('overview.statusAlert', { status: statusLabel })}</span>
         </Alert>
       )}
       <section aria-labelledby="teams-title">
         <div className="mb-3 flex items-center justify-between">
           <h2 id="teams-title" className="m-0 text-base font-semibold tracking-tight">
-            Tình hình các đội
+            {t('overview.teamsTitle')}
           </h2>
           <Link
             className="flex min-h-11 items-center gap-2 text-sm font-medium text-[var(--foreground)] underline-offset-4 hover:underline"
             to="ranking"
           >
-            Xem xếp hạng <ArrowRight className="h-4 w-4" />
+            {t('overview.viewRanking')} <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
         <div className="grid-auto">
@@ -76,10 +78,10 @@ export function WorkspaceOverview() {
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-sm font-medium text-[var(--muted-foreground)]">
-                    Hạng {team.rank}
+                    {t('overview.rank', { rank: team.rank })}
                   </span>
                   <Badge tone={team.eligible ? 'success' : 'neutral'}>
-                    {team.eligible ? 'Đủ điều kiện' : 'Đang tích lũy'}
+                    {team.eligible ? t('overview.eligible') : t('overview.accumulating')}
                   </Badge>
                 </div>
                 <h3 className="m-0 text-xl font-semibold tracking-tight">
@@ -88,9 +90,9 @@ export function WorkspaceOverview() {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-3 gap-2">
-                  <Metric icon={Medal} value={team.medals} label="Huy hiệu" />
-                  <Metric icon={Gem} value={team.pieces} label="Mảnh ghép" />
-                  <Metric icon={Package} value={team.items} label="Vật phẩm" />
+                  <Metric icon={Medal} value={team.medals} label={tc('metrics.medals')} />
+                  <Metric icon={Gem} value={team.pieces} label={tc('metrics.pieces')} />
+                  <Metric icon={Package} value={team.items} label={tc('metrics.items')} />
                 </div>
               </CardContent>
             </Card>
@@ -102,9 +104,9 @@ export function WorkspaceOverview() {
           <Card className="flex min-h-20 items-center gap-4 p-5 transition-colors hover:bg-[var(--muted)]/40">
             <Radio className="h-5 w-5 shrink-0 text-[var(--muted-foreground)]" />
             <div>
-              <h2 className="m-0 text-base font-semibold">Nhập điểm trực tiếp</h2>
+              <h2 className="m-0 text-base font-semibold">{t('overview.scoreTitle')}</h2>
               <p className="m-0 text-sm text-[var(--muted-foreground)]">
-                Xếp hạng game và thao tác nhanh
+                {t('overview.scoreDescription')}
               </p>
             </div>
           </Card>
@@ -113,9 +115,9 @@ export function WorkspaceOverview() {
           <Card className="flex min-h-20 items-center gap-4 p-5 transition-colors hover:bg-[var(--muted)]/40">
             <Users className="h-5 w-5 shrink-0 text-[var(--muted-foreground)]" />
             <div>
-              <h2 className="m-0 text-base font-semibold">Quản lý thành viên</h2>
+              <h2 className="m-0 text-base font-semibold">{t('overview.membersTitle')}</h2>
               <p className="m-0 text-sm text-[var(--muted-foreground)]">
-                Phân quyền và mời cộng tác
+                {t('overview.membersDescription')}
               </p>
             </div>
           </Card>

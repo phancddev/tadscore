@@ -1,5 +1,6 @@
 import { X } from 'lucide-react';
 import { createContext, useCallback, useContext, useState, type ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { cn } from '../../lib/cn';
 
 type Toast = { id: number; message: string; tone?: 'success' | 'error' };
@@ -9,6 +10,7 @@ const ToastContext = createContext<(message: string, tone?: Toast['tone']) => vo
 export const useToast = () => useContext(ToastContext);
 
 export function ToastProvider({ children }: { children: ReactNode }) {
+  const { t } = useTranslation('common');
   const [toasts, setToasts] = useState<Toast[]>([]);
   const notify = useCallback((message: string, tone: Toast['tone'] = 'success') => {
     const id = Date.now();
@@ -36,7 +38,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             <button
               className="grid min-h-9 min-w-9 place-items-center rounded-[var(--radius)] hover:bg-[var(--muted)]"
               onClick={() => setToasts((items) => items.filter((item) => item.id !== toast.id))}
-              aria-label="Đóng thông báo"
+              aria-label={t('toast.close')}
             >
               <X className="h-4 w-4" />
             </button>

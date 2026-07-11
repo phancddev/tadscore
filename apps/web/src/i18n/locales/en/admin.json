@@ -1,0 +1,58 @@
+{
+  "page": {
+    "title": "Platform admin",
+    "description": "Manage system roles, account status, workspaces, and email operations.",
+    "tabsLabel": "Admin sections",
+    "users": "Accounts",
+    "workspaces": "Workspaces",
+    "audit": "Audit",
+    "system": "System",
+    "outbox": "Email"
+  },
+  "users": {
+    "updated": "Account updated",
+    "emptyTitle": "No accounts",
+    "emptyMessage": "No users in the system yet.",
+    "markVerified": "Mark verified",
+    "role": "Role",
+    "status": "Status",
+    "roleOf": "System role of {{email}}",
+    "statusOf": "Status of {{email}}",
+    "verified": "verified",
+    "unverified": "unverified"
+  },
+  "workspaces": {
+    "updated": "Workspace updated",
+    "emptyTitle": "No workspaces",
+    "emptyMessage": "No workspaces yet.",
+    "activate": "Activate",
+    "suspend": "Suspend",
+    "members": "{{count}} members",
+    "confirmSuspend": "Suspend this workspace?"
+  },
+  "audit": {
+    "emptyTitle": "No audit events",
+    "emptyMessage": "Admin events will appear here."
+  },
+  "system": {
+    "health": "System health",
+    "rules": "Loaded rule sets",
+    "healthy": "Healthy",
+    "degraded": "Degraded",
+    "unknown": "Unknown",
+    "apiDb": "API & database",
+    "serverTime": "Server time: {{time}}",
+    "emailOutbox": "Email outbox",
+    "failedEmails": "{{count}} failed emails",
+    "emailVerification": "Email verification",
+    "runtimeNoSecrets": "Runtime value with secrets removed",
+    "ruleRegistry": "Rule registry"
+  },
+  "outbox": {
+    "emptyTitle": "Email queue empty",
+    "emptyMessage": "No pending or failed emails.",
+    "retry": "Retry send",
+    "retried": "Email re-queued",
+    "attempts": "{{attempt}}/{{max}} attempts"
+  }
+}

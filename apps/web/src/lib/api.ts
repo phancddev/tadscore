@@ -1,3 +1,4 @@
+import i18n from '../i18n';
 import type {
   Activity,
   AuditLog,
@@ -60,7 +61,7 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   if (!response.ok)
     throw new ApiError(
       response.status,
-      payload.error?.message || 'Yêu cầu không thành công',
+      payload.error?.message || i18n.t('states.requestFailed'),
       payload.error?.code,
       payload.error?.details,
     );

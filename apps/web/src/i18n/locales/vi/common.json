@@ -1,0 +1,87 @@
+{
+  "language": {
+    "label": "Ngôn ngữ",
+    "vi": "Tiếng Việt",
+    "en": "English",
+    "switchTo": "Chuyển sang {{language}}"
+  },
+  "nav": {
+    "main": "Điều hướng chính",
+    "quick": "Điều hướng nhanh",
+    "skip": "Bỏ qua điều hướng",
+    "openMenu": "Mở menu",
+    "closeMenu": "Đóng menu",
+    "workspaces": "Không gian",
+    "profile": "Hồ sơ",
+    "admin": "Quản trị",
+    "logout": "Đăng xuất",
+    "workspace": "Không gian làm việc",
+    "overview": "Tổng quan",
+    "teams": "Nhà",
+    "score": "Nhập điểm",
+    "ranking": "Xếp hạng",
+    "members": "Thành viên",
+    "ledger": "Lịch sử",
+    "settings": "Cài đặt"
+  },
+  "actions": {
+    "save": "Lưu",
+    "cancel": "Huỷ",
+    "close": "Đóng",
+    "retry": "Thử lại",
+    "create": "Tạo",
+    "edit": "Sửa",
+    "delete": "Xoá",
+    "confirm": "Xác nhận",
+    "back": "Quay lại",
+    "copy": "Sao chép",
+    "open": "Mở",
+    "search": "Tìm kiếm"
+  },
+  "states": {
+    "loading": "Đang tải",
+    "loadError": "Không thể tải dữ liệu. Vui lòng thử lại.",
+    "requestFailed": "Yêu cầu không thành công"
+  },
+  "notFound": {
+    "title": "Không tìm thấy trang",
+    "home": "Về trang chính"
+  },
+  "roles": {
+    "owner": "Chủ sở hữu",
+    "admin": "Quản trị",
+    "scorer": "Chấm điểm",
+    "viewer": "Xem",
+    "super_admin": "Super admin",
+    "user": "Người dùng"
+  },
+  "status": {
+    "active": "Hoạt động",
+    "locked": "Khoá",
+    "suspended": "Tạm dừng",
+    "archived": "Lưu trữ",
+    "pending": "Chờ",
+    "draft": "Nháp",
+    "open": "Mở",
+    "finalized": "Chốt",
+    "removed": "Đã gỡ"
+  },
+  "metrics": {
+    "medals": "Huy hiệu",
+    "pieces": "Mảnh ghép",
+    "items": "Vật phẩm",
+    "piece": "Mảnh"
+  },
+  "errors": {
+    "secureRandom": "Trình duyệt không hỗ trợ bộ sinh số ngẫu nhiên an toàn."
+  },
+  "toast": {
+    "close": "Đóng thông báo"
+  },
+  "modal": {
+    "close": "Đóng"
+  },
+  "brand": {
+    "tagline": "Chấm điểm sự kiện"
+  }
+}

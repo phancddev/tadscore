@@ -1,9 +1,8 @@
 import { Gem, Medal, Package, ShieldCheck, Trophy } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Badge } from '../../components/ui/Badge';
 import { Metric } from '../../components/ui/Metric';
 import type { Ranking, Team } from '../../lib/types';
-
-const podium = ['Hạng nhất', 'Hạng nhì', 'Hạng ba', 'Hạng tư'];
 
 export function Leaderboard({
   ranking,
@@ -14,10 +13,21 @@ export function Leaderboard({
   presenter?: boolean;
   onTeam?: (team: Team) => void;
 }) {
+  const { t: tr } = useTranslation('ranking');
+  const { t: tc } = useTranslation('common');
   const teams = [...ranking.teams].sort((a, b) => a.rank - b.rank);
+  const placeLabel = (index: number, rank: number) => {
+    const places = [
+      tr('board.place1'),
+      tr('board.place2'),
+      tr('board.place3'),
+      tr('board.place4'),
+    ];
+    return places[index] || tr('board.placeN', { rank });
+  };
   return (
     <section
-      aria-label="Bảng xếp hạng"
+      aria-label={tr('board.aria')}
       className={presenter ? 'grid gap-5 xl:grid-cols-2' : 'grid gap-3'}
     >
       {teams.map((team, index) => {
@@ -45,7 +55,7 @@ export function Leaderboard({
                 <p
                   className={`m-0 font-medium text-[var(--muted-foreground)] ${presenter ? 'text-sm' : 'text-xs'}`}
                 >
-                  {podium[index] || `Hạng ${team.rank}`}
+                  {placeLabel(index, team.rank)}
                 </p>
                 <h2
                   className={`m-0 mt-0.5 truncate font-semibold tracking-tight ${presenter ? 'text-3xl md:text-4xl' : 'text-lg'}`}
@@ -57,10 +67,10 @@ export function Leaderboard({
                     {team.eligible ? (
                       <>
                         <ShieldCheck className="mr-1 h-3.5 w-3.5" />
-                        Đủ {ranking.rule.minimumPieces} mảnh
+                        {tr('board.enoughPieces', { count: ranking.rule.minimumPieces })}
                       </>
                     ) : (
-                      `Chưa đủ ${ranking.rule.minimumPieces} mảnh`
+                      tr('board.needPieces', { count: ranking.rule.minimumPieces })
                     )}
                   </Badge>
                 </div>
@@ -68,9 +78,24 @@ export function Leaderboard({
               <div
                 className={`col-span-2 grid grid-cols-3 gap-2 md:col-span-1 ${presenter ? 'md:min-w-80' : ''}`}
               >
-                <Metric icon={Medal} value={team.medals} label="Huy hiệu" large={presenter} />
-                <Metric icon={Gem} value={team.pieces} label="Mảnh ghép" large={presenter} />
-                <Metric icon={Package} value={team.items} label="Vật phẩm" large={presenter} />
+                <Metric
+                  icon={Medal}
+                  value={team.medals}
+                  label={tc('metrics.medals')}
+                  large={presenter}
+                />
+                <Metric
+                  icon={Gem}
+                  value={team.pieces}
+                  label={tc('metrics.pieces')}
+                  large={presenter}
+                />
+                <Metric
+                  icon={Package}
+                  value={team.items}
+                  label={tc('metrics.items')}
+                  large={presenter}
+                />
               </div>
             </div>
           </>
@@ -81,7 +106,7 @@ export function Leaderboard({
             key={team.teamId}
             onClick={() => onTeam(team)}
             className={`${cardClass} transition-colors hover:bg-[var(--muted)]/40`}
-            aria-label={`Xem chi tiết ${team.displayName || team.name}`}
+            aria-label={tr('board.viewTeam', { name: team.displayName || team.name })}
           >
             {content}
           </button>

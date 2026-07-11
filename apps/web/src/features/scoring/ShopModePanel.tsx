@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Alert } from '../../components/ui/Alert';
 import { Badge } from '../../components/ui/Badge';
 import { Field } from '../../components/ui/Field';
@@ -6,46 +7,48 @@ import type { ShopItem, Team } from '../../lib/types';
 import type { ShopConfig } from './shopConfig';
 
 export function PieceIntro({ shop, team }: { shop: ShopConfig; team?: Team }) {
+  const { t } = useTranslation('scoring');
+  const boughtPart =
+    team && shop.pieceLimit
+      ? t('shop.limitBoughtPart', {
+          bought: team.shopPiecesBought ?? 0,
+          remaining: Math.max(0, shop.pieceLimit.max - (team.shopPiecesBought ?? 0)),
+        })
+      : '';
   return (
     <Alert variant="default" className="flex-col items-stretch gap-2">
-      <p className="m-0 text-sm font-medium">Mảnh ghép = điều kiện xếp hạng</p>
+      <p className="m-0 text-sm font-medium">{t('shop.pieceTitle')}</p>
       <p className="m-0 text-sm text-[var(--muted-foreground)]">
-        Cần tối thiểu <strong>{shop.minimumPieces} mảnh</strong> để xếp trước đội chưa đủ. Shop đổi
-        huy hiệu lấy mảnh, không phải điểm thưởng game.
+        {t('shop.pieceDesc', { count: shop.minimumPieces })}
       </p>
       {team && (
         <div className="flex flex-wrap gap-2">
           <Badge tone={team.pieces >= shop.minimumPieces ? 'success' : 'warning'}>
             {team.pieces >= shop.minimumPieces
-              ? `Đủ điều kiện (${team.pieces}/${shop.minimumPieces})`
-              : `Còn thiếu ${Math.max(0, shop.minimumPieces - team.pieces)} mảnh`}
+              ? t('shop.eligible', { current: team.pieces, min: shop.minimumPieces })
+              : t('shop.missingPieces', {
+                  count: Math.max(0, shop.minimumPieces - team.pieces),
+                })}
           </Badge>
           {shop.piece && (
             <Badge tone="outline">
-              Giá: {shop.piece.medalCost} HH / {shop.piece.pieceDelta} mảnh
+              {t('shop.pricePerPiece', {
+                cost: shop.piece.medalCost,
+                gain: shop.piece.pieceDelta,
+              })}
             </Badge>
           )}
         </div>
       )}
       {shop.pieceLimit && (
         <p className="m-0 text-xs text-[var(--muted-foreground)]">
-          {shop.pieceLimit.active ? (
-            <>
-              Limit đang áp dụng: trước khi{' '}
-              <code className="rounded bg-[var(--muted)] px-1">{shop.pieceLimit.activityKey}</code>{' '}
-              xong, mỗi đội tối đa <strong>{shop.pieceLimit.max}</strong> mảnh từ shop
-              {team
-                ? ` (đã mua ${team.shopPiecesBought ?? 0}, còn ${Math.max(0, shop.pieceLimit.max - (team.shopPiecesBought ?? 0))})`
-                : ''}
-              .
-            </>
-          ) : (
-            <>
-              Limit shop theo{' '}
-              <code className="rounded bg-[var(--muted)] px-1">{shop.pieceLimit.activityKey}</code>{' '}
-              đã hết hiệu lực (activity finalized) — mua thêm không bị chặn max shop.
-            </>
-          )}
+          {shop.pieceLimit.active
+            ? t('shop.limitActive', {
+                activity: shop.pieceLimit.activityKey,
+                max: shop.pieceLimit.max,
+                boughtPart,
+              })
+            : t('shop.limitInactive', { activity: shop.pieceLimit.activityKey })}
         </p>
       )}
     </Alert>
@@ -53,15 +56,17 @@ export function PieceIntro({ shop, team }: { shop: ShopConfig; team?: Team }) {
 }
 
 export function ItemIntro({ shop }: { shop: ShopConfig }) {
+  const { t } = useTranslation('scoring');
   return (
     <Alert variant="default" className="flex-col items-stretch gap-2">
-      <p className="m-0 text-sm font-medium">Vật phẩm cửa hàng</p>
-      <p className="m-0 text-sm text-[var(--muted-foreground)]">
-        Mua bằng huy hiệu. Không dùng để tính đủ điều kiện như mảnh ghép.
-      </p>
+      <p className="m-0 text-sm font-medium">{t('shop.itemTitle')}</p>
+      <p className="m-0 text-sm text-[var(--muted-foreground)]">{t('shop.itemDesc')}</p>
       {shop.item && (
         <Badge tone="outline" className="w-fit">
-          Giá: {shop.item.medalCost} HH / {shop.item.itemDelta} vật phẩm
+          {t('shop.pricePerItem', {
+            cost: shop.item.medalCost,
+            gain: shop.item.itemDelta,
+          })}
         </Badge>
       )}
     </Alert>
@@ -89,14 +94,19 @@ export function PurchaseFields({
   blockers: string[];
   onQuantity: (value: number) => void;
 }) {
+  const { t } = useTranslation('scoring');
   return (
     <>
       <Field
-        label="Số lượng"
+        label={t('quick.quantity')}
         htmlFor="quick-value"
         hint={
           shopItem
-            ? `Mỗi đơn vị: −${unitCost} HH, +${unitGain} ${mode === 'piece' ? 'mảnh' : 'vật phẩm'}`
+            ? t('quick.unitHint', {
+                cost: unitCost,
+                gain: unitGain,
+                unit: mode === 'piece' ? t('quick.unitPiece') : t('quick.unitItem'),
+              })
             : undefined
         }
       >
@@ -114,12 +124,12 @@ export function PurchaseFields({
       {shopItem && team && (
         <div className="rounded-[var(--radius)] border border-[var(--border)] p-3 text-sm">
           <div className="flex justify-between gap-3">
-            <span className="text-[var(--muted-foreground)]">Tổng trừ huy hiệu</span>
+            <span className="text-[var(--muted-foreground)]">{t('quick.totalMedalCost')}</span>
             <strong className="tabular text-[var(--destructive)]">−{totalCost} HH</strong>
           </div>
           <div className="mt-1 flex justify-between gap-3">
             <span className="text-[var(--muted-foreground)]">
-              {mode === 'piece' ? 'Mảnh sau mua' : 'Vật phẩm sau mua'}
+              {mode === 'piece' ? t('quick.afterPieces') : t('quick.afterItems')}
             </span>
             <strong className="tabular">
               {mode === 'piece'
@@ -128,7 +138,7 @@ export function PurchaseFields({
             </strong>
           </div>
           <div className="mt-1 flex justify-between gap-3">
-            <span className="text-[var(--muted-foreground)]">Huy hiệu sau mua</span>
+            <span className="text-[var(--muted-foreground)]">{t('quick.afterMedals')}</span>
             <strong className="tabular">
               {team.medals} → {team.medals - totalCost}
             </strong>

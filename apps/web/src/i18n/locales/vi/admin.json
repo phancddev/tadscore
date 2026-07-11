@@ -1,0 +1,58 @@
+{
+  "page": {
+    "title": "Quản trị platform",
+    "description": "Quản lý vai trò hệ thống, trạng thái tài khoản, workspace và vận hành email.",
+    "tabsLabel": "Khu vực quản trị",
+    "users": "Tài khoản",
+    "workspaces": "Workspace",
+    "audit": "Audit",
+    "system": "Hệ thống",
+    "outbox": "Email"
+  },
+  "users": {
+    "updated": "Đã cập nhật tài khoản",
+    "emptyTitle": "Không có tài khoản",
+    "emptyMessage": "Chưa có người dùng trong hệ thống.",
+    "markVerified": "Đánh dấu đã xác minh",
+    "role": "Vai trò",
+    "status": "Trạng thái",
+    "roleOf": "Vai trò hệ thống của {{email}}",
+    "statusOf": "Trạng thái của {{email}}",
+    "verified": "verified",
+    "unverified": "unverified"
+  },
+  "workspaces": {
+    "updated": "Đã cập nhật workspace",
+    "emptyTitle": "Không có workspace",
+    "emptyMessage": "Chưa có workspace nào.",
+    "activate": "Kích hoạt",
+    "suspend": "Tạm dừng",
+    "members": "{{count}} thành viên",
+    "confirmSuspend": "Đình chỉ workspace này?"
+  },
+  "audit": {
+    "emptyTitle": "Chưa có audit",
+    "emptyMessage": "Sự kiện quản trị sẽ xuất hiện tại đây."
+  },
+  "system": {
+    "health": "Sức khoẻ hệ thống",
+    "rules": "Bộ luật đã nạp",
+    "healthy": "Khoẻ",
+    "degraded": "Suy giảm",
+    "unknown": "Không rõ",
+    "apiDb": "API & database",
+    "serverTime": "Thời gian server: {{time}}",
+    "emailOutbox": "Email outbox",
+    "failedEmails": "{{count}} email lỗi",
+    "emailVerification": "Xác minh email",
+    "runtimeNoSecrets": "Giá trị runtime đã loại bỏ secret",
+    "ruleRegistry": "Rule registry"
+  },
+  "outbox": {
+    "emptyTitle": "Hàng đợi email trống",
+    "emptyMessage": "Không có email đang chờ hoặc lỗi.",
+    "retry": "Thử gửi lại",
+    "retried": "Đã đưa email vào hàng đợi lại",
+    "attempts": "{{attempt}}/{{max}} lần"
+  }
+}

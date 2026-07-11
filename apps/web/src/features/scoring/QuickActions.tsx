@@ -1,5 +1,6 @@
 import { ArrowUpDown, Gem, Package } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Alert } from '../../components/ui/Alert';
 import { Button } from '../../components/ui/Button';
 import {
@@ -46,6 +47,8 @@ export function QuickActions({
   onQuick: (data: QuickAction) => void;
   onPurchase: (data: QuickAction) => void;
 }) {
+  const { t } = useTranslation('scoring');
+  const { t: tc } = useTranslation('common');
   const [teamId, setTeamId] = useState('');
   const [mode, setMode] = useState<QuickAction['mode']>('manual');
   const [deltaText, setDeltaText] = useState('+1');
@@ -71,24 +74,33 @@ export function QuickActions({
   );
   const purchaseBlockers = useMemo(() => {
     if (mode === 'manual') return [] as string[];
-    if (!shopReady || !shop) return ['Đang tải cấu hình shop của workspace…'] as string[];
-    if (!team || !shopItem) return ['Không có cấu hình shop trong rule snapshot.'] as string[];
+    if (!shopReady || !shop) return [t('quick.shopLoading')] as string[];
+    if (!team || !shopItem) return [t('quick.shopMissing')] as string[];
     const issues: string[] = [];
-    if (quantity < 1) issues.push('Số lượng phải từ 1 trở lên.');
+    if (quantity < 1) issues.push(t('quick.qtyMin'));
     if (team.medals < totalCost)
       issues.push(
-        `Không đủ huy hiệu: cần ${totalCost} HH, đội đang có ${team.medals} HH (thiếu ${totalCost - team.medals}).`,
+        t('quick.notEnough', {
+          need: totalCost,
+          have: team.medals,
+          missing: totalCost - team.medals,
+        }),
       );
     if (mode === 'piece' && shop.pieceLimit?.active) {
       const bought = team.shopPiecesBought ?? 0;
       const remaining = Math.max(0, shop.pieceLimit.max - bought);
       if (bought + quantity > shop.pieceLimit.max)
         issues.push(
-          `Limit shop: trước ${shop.pieceLimit.activityKey} mỗi đội tối đa ${shop.pieceLimit.max} mảnh (đã mua ${bought}, còn ${remaining}).`,
+          t('quick.pieceLimit', {
+            activity: shop.pieceLimit.activityKey,
+            max: shop.pieceLimit.max,
+            bought,
+            remaining,
+          }),
         );
     }
     return issues;
-  }, [mode, shopReady, shop, team, shopItem, quantity, totalCost]);
+  }, [mode, shopReady, shop, team, shopItem, quantity, totalCost, t]);
 
   const canSubmit =
     !!teamId &&
@@ -102,7 +114,9 @@ export function QuickActions({
         teamId,
         mode,
         value: parsed.value,
-        reason: reason.trim() || (parsed.value > 0 ? 'Cộng điểm thủ công' : 'Trừ điểm thủ công'),
+        reason:
+          reason.trim() ||
+          (parsed.value > 0 ? t('quick.defaultAdd') : t('quick.defaultSubtract')),
       });
       return;
     }
@@ -110,35 +124,33 @@ export function QuickActions({
       teamId,
       mode,
       value: quantity,
-      reason: reason.trim() || (mode === 'piece' ? 'Mua mảnh ghép' : 'Mua vật phẩm'),
+      reason: reason.trim() || (mode === 'piece' ? t('quick.defaultBuyPiece') : t('quick.defaultBuyItem')),
     });
   };
 
   const submitLabel =
     mode === 'manual'
-      ? 'Ghi nhận điểm'
+      ? t('quick.submitManual')
       : mode === 'piece'
-        ? `Mua ${quantity} mảnh (−${totalCost} HH)`
-        : `Mua ${quantity} vật phẩm (−${totalCost} HH)`;
+        ? t('quick.submitPiece', { count: quantity, cost: totalCost })
+        : t('quick.submitItem', { count: quantity, cost: totalCost });
+
+  const modeTabs = [
+    ['manual', t('quick.manual'), ArrowUpDown],
+    ['piece', t('quick.piece'), Gem],
+    ['item', t('quick.item'), Package],
+  ] as const;
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Thao tác nhanh</CardTitle>
-        <CardDescription>
-          Cộng/trừ huy hiệu, hoặc mua mảnh ghép / vật phẩm theo rule snapshot của workspace.
-        </CardDescription>
+        <CardTitle>{t('quick.title')}</CardTitle>
+        <CardDescription>{t('quick.description')}</CardDescription>
       </CardHeader>
       <CardContent>
         <fieldset disabled={disabled} className="m-0 min-w-0 border-0 p-0">
-          <div className="grid grid-cols-3 gap-2" role="tablist" aria-label="Loại thao tác">
-            {(
-              [
-                ['manual', 'Cộng/trừ điểm', ArrowUpDown],
-                ['piece', 'Mảnh ghép', Gem],
-                ['item', 'Vật phẩm', Package],
-              ] as const
-            ).map(([id, label, Icon]) => (
+          <div className="grid grid-cols-3 gap-2" role="tablist" aria-label={t('quick.typeLabel')}>
+            {modeTabs.map(([id, label, Icon]) => (
               <button
                 type="button"
                 key={id}
@@ -162,7 +174,7 @@ export function QuickActions({
           </div>
 
           <div className="mt-5 grid gap-4">
-            <Field label="Đội" htmlFor="quick-team">
+            <Field label={t('quick.team')} htmlFor="quick-team">
               <Select
                 id="quick-team"
                 value={teamId}
@@ -170,8 +182,12 @@ export function QuickActions({
               >
                 {teams.map((item) => (
                   <option key={item.teamId} value={item.teamId}>
-                    {item.displayName || item.name} · {item.medals} HH · {item.pieces} mảnh ·{' '}
-                    {item.items} VP
+                    {t('quick.teamLine', {
+                      name: item.displayName || item.name,
+                      medals: item.medals,
+                      pieces: item.pieces,
+                      items: item.items,
+                    })}
                   </option>
                 ))}
               </Select>
@@ -180,30 +196,28 @@ export function QuickActions({
             {team && (
               <div
                 className="grid grid-cols-3 gap-2 rounded-[var(--radius)] border border-[var(--border)] bg-[var(--muted)]/40 p-3 text-center text-sm"
-                aria-label="Số dư đội đang chọn"
+                aria-label={t('quick.teamBalance')}
               >
                 <div>
                   <div className="font-semibold tabular">{team.medals}</div>
-                  <div className="text-xs text-[var(--muted-foreground)]">Huy hiệu</div>
+                  <div className="text-xs text-[var(--muted-foreground)]">{tc('metrics.medals')}</div>
                 </div>
                 <div>
                   <div className="font-semibold tabular">{team.pieces}</div>
-                  <div className="text-xs text-[var(--muted-foreground)]">Mảnh ghép</div>
+                  <div className="text-xs text-[var(--muted-foreground)]">{tc('metrics.pieces')}</div>
                 </div>
                 <div>
                   <div className="font-semibold tabular">{team.items}</div>
-                  <div className="text-xs text-[var(--muted-foreground)]">Vật phẩm</div>
+                  <div className="text-xs text-[var(--muted-foreground)]">{tc('metrics.items')}</div>
                 </div>
               </div>
             )}
 
             {!shopReady && (mode === 'piece' || mode === 'item') && (
-              <Alert variant="warning">Đang tải cấu hình shop từ ranking workspace…</Alert>
+              <Alert variant="warning">{t('quick.shopLoadingAlert')}</Alert>
             )}
             {shopReady && !shop && (mode === 'piece' || mode === 'item') && (
-              <Alert variant="destructive">
-                Ranking không có shop snapshot. Thử tải lại trang hoặc kiểm tra API ranking.
-              </Alert>
+              <Alert variant="destructive">{t('quick.shopMissingAlert')}</Alert>
             )}
 
             {mode === 'piece' && shop && <PieceIntro shop={shop} team={team} />}
@@ -212,27 +226,27 @@ export function QuickActions({
             {mode === 'manual' ? (
               <>
                 <Field
-                  label="Mức thay đổi huy hiệu"
+                  label={t('quick.delta')}
                   htmlFor="quick-delta"
                   error={!parsed.ok ? parsed.error : undefined}
-                  hint="Ví dụ: +5, -2, 10. Cho phép tổng điểm âm."
+                  hint={t('quick.deltaHint')}
                 >
                   <Input
                     id="quick-delta"
                     inputMode="text"
                     autoComplete="off"
-                    placeholder="+5 hoặc -2"
+                    placeholder={t('quick.deltaPlaceholder')}
                     value={deltaText}
                     onChange={(event) => setDeltaText(event.target.value)}
                     aria-invalid={!parsed.ok}
                   />
                 </Field>
-                <Field label="Lý do / ghi chú" htmlFor="quick-reason">
+                <Field label={t('quick.reason')} htmlFor="quick-reason">
                   <Input
                     id="quick-reason"
                     value={reason}
                     onChange={(event) => setReason(event.target.value)}
-                    placeholder="Ghi chú (tuỳ chọn)"
+                    placeholder={t('quick.reasonPlaceholder')}
                   />
                 </Field>
               </>

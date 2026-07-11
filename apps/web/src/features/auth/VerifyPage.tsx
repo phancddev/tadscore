@@ -1,5 +1,6 @@
 import { CheckCircle2, Mail } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Alert } from '../../components/ui/Alert';
 import { Button } from '../../components/ui/Button';
@@ -10,6 +11,7 @@ import { api } from '../../lib/api';
 import { AuthShell } from './AuthShell';
 
 export function VerifyPage() {
+  const { t } = useTranslation('auth');
   const [params] = useSearchParams();
   const email = params.get('email') || '';
   const token = params.get('token');
@@ -41,7 +43,7 @@ export function VerifyPage() {
       await api.auth.verify({ email, code });
       setState('success');
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Mã không hợp lệ');
+      setMessage(error instanceof Error ? error.message : t('verify.invalid'));
       setState('error');
     }
   };
@@ -49,37 +51,33 @@ export function VerifyPage() {
     try {
       await api.auth.resend(email);
       setCountdown(300);
-      setMessage('Đã gửi lại hướng dẫn xác minh.');
+      setMessage(t('verify.resent'));
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Chưa thể gửi lại');
+      setMessage(error instanceof Error ? error.message : t('verify.resendFailed'));
     }
   };
   if (state === 'success')
     return (
-      <AuthShell title="Email đã xác minh" subtitle="Tài khoản của bạn đã sẵn sàng.">
+      <AuthShell title={t('verify.verifiedTitle')} subtitle={t('verify.verifiedSubtitle')}>
         <div className="grid place-items-center gap-5 text-center">
           <CheckCircle2 className="h-12 w-12 text-[var(--success)]" />
           <Link
             to="/login"
             className="inline-flex min-h-11 w-full items-center justify-center rounded-[var(--radius)] bg-[var(--primary)] px-4 text-sm font-medium text-[var(--primary-foreground)]"
           >
-            Đăng nhập
+            {t('verify.login')}
           </Link>
         </div>
       </AuthShell>
     );
   return (
     <AuthShell
-      title={mode === 'link' ? 'Xác minh qua liên kết' : 'Nhập mã xác minh'}
-      subtitle={
-        mode === 'link'
-          ? 'Mở liên kết trong email. Bạn có thể gửi lại nếu chưa nhận được.'
-          : `Mã 6 chữ số đã gửi tới ${email}.`
-      }
+      title={mode === 'link' ? t('verify.linkTitle') : t('verify.otpTitle')}
+      subtitle={mode === 'link' ? t('verify.linkHint') : t('verify.otpHint', { email })}
     >
       {mode === 'otp' ? (
         <div className="grid gap-5">
-          <Field label="Mã xác minh" htmlFor="otp">
+          <Field label={t('verify.codeLabel')} htmlFor="otp">
             <Input
               id="otp"
               className="text-center text-2xl tracking-[.35em] tabular"
@@ -92,19 +90,19 @@ export function VerifyPage() {
           </Field>
           <Button onClick={verify} loading={state === 'loading'} disabled={code.length !== 6}>
             <Mail className="h-4 w-4" />
-            Xác minh
+            {t('verify.submit')}
           </Button>
         </div>
       ) : (
         <Card>
           <CardContent className="pt-5 text-sm text-[var(--muted-foreground)]">
-            Liên kết xác minh có thời hạn và chỉ dùng được một lần.
+            {t('verify.linkNote')}
           </CardContent>
         </Card>
       )}
       {!token && (
         <Button className="mt-3 w-full" variant="ghost" onClick={resend} disabled={countdown > 0}>
-          Gửi lại{' '}
+          {t('verify.resend')}{' '}
           {countdown > 0 &&
             `(${Math.floor(countdown / 60)}:${String(countdown % 60).padStart(2, '0')})`}
         </Button>

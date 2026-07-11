@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Pencil, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 import { Alert } from '../../components/ui/Alert';
 import { Badge } from '../../components/ui/Badge';
@@ -25,6 +26,8 @@ const emptyForm = {
 };
 
 export function TeamsPage() {
+  const { t } = useTranslation('workspace');
+  const { t: tc } = useTranslation('common');
   const { workspaceId = '' } = useParams();
   const toast = useToast();
   const client = useQueryClient();
@@ -65,7 +68,7 @@ export function TeamsPage() {
     onSuccess: () => {
       refresh();
       close();
-      toast(editing ? 'Đã cập nhật nhà' : 'Đã thêm nhà');
+      toast(editing ? t('teams.updated') : t('teams.created'));
     },
   });
   const remove = useMutation({
@@ -74,17 +77,14 @@ export function TeamsPage() {
       refresh();
       toast(
         result && 'deactivated' in result && result.deactivated
-          ? 'Đã vô hiệu hoá nhà (giữ lịch sử điểm)'
-          : 'Đã xoá nhà',
+          ? t('teams.deactivated')
+          : t('teams.deleted'),
       );
     },
   });
   const openCreate = () => {
     setEditing(null);
-    setForm({
-      ...emptyForm,
-      sortOrder: (teams.data?.length ?? 0) + 1,
-    });
+    setForm({ ...emptyForm, sortOrder: (teams.data?.length ?? 0) + 1 });
     setOpen(true);
   };
   const openEdit = (team: ManagedTeam) => {
@@ -115,27 +115,29 @@ export function TeamsPage() {
         />
       </div>
     );
+  const status = workspace.data?.status || '';
+  const statusLabel = status ? tc(`status.${status}`, { defaultValue: status }) : status;
   return (
     <div className="page-shell">
       <PageHeader
-        title="Quản lý nhà"
-        description="Thêm, sửa hoặc xoá các nhà (kể cả nhà mặc định). Xoá nhà có lịch sử sẽ chỉ vô hiệu hoá."
+        title={t('teams.title')}
+        description={t('teams.description')}
         actions={
           canManage ? (
             <Button onClick={openCreate}>
               <Plus className="h-4 w-4" />
-              Thêm nhà
+              {t('teams.add')}
             </Button>
           ) : undefined
         }
       />
       {!canManage && (
         <Alert variant="warning" className="mb-5">
-          Chỉ owner/admin của workspace đang active mới được chỉnh sửa danh sách nhà.
+          {t('teams.readonly', { status: statusLabel })}
         </Alert>
       )}
       {!teams.data?.length ? (
-        <EmptyState title="Chưa có nhà" message="Thêm nhà để bắt đầu xếp hạng và nhập điểm." />
+        <EmptyState title={t('teams.emptyTitle')} message={t('teams.emptyMessage')} />
       ) : (
         <div className="grid gap-3">
           {teams.data.map((team) => (
@@ -153,14 +155,15 @@ export function TeamsPage() {
                   </Badge>
                 </div>
                 <p className="m-0 text-sm text-[var(--muted-foreground)]">
-                  {team.code} · {team.name} · {team.medals ?? 0} HH · {team.pieces ?? 0} mảnh
+                  {team.code} · {team.name} ·{' '}
+                  {t('teams.stats', { medals: team.medals ?? 0, pieces: team.pieces ?? 0 })}
                 </p>
               </div>
               {canManage && (
                 <div className="flex gap-2">
                   <Button variant="secondary" size="sm" onClick={() => openEdit(team)}>
                     <Pencil className="h-4 w-4" />
-                    Sửa
+                    {tc('actions.edit')}
                   </Button>
                   {team.isActive ? (
                     <Button
@@ -169,16 +172,12 @@ export function TeamsPage() {
                       className="text-[var(--destructive)]"
                       loading={remove.isPending}
                       onClick={() => {
-                        if (
-                          confirm(
-                            `Xoá nhà "${team.displayName || team.name}"? Nhà có lịch sử điểm sẽ được vô hiệu hoá.`,
-                          )
-                        )
+                        if (confirm(t('teams.confirmDelete', { name: team.displayName || team.name })))
                           remove.mutate(team);
                       }}
                     >
                       <Trash2 className="h-4 w-4" />
-                      Xoá
+                      {tc('actions.delete')}
                     </Button>
                   ) : (
                     <Button
@@ -189,12 +188,12 @@ export function TeamsPage() {
                           .updateTeam(workspaceId, team.id, { isActive: true })
                           .then(() => {
                             refresh();
-                            toast('Đã kích hoạt lại nhà');
+                            toast(t('teams.reactivated'));
                           })
                           .catch((error: Error) => toast(error.message, 'error'))
                       }
                     >
-                      Kích hoạt
+                      {t('teams.activate')}
                     </Button>
                   )}
                 </div>
@@ -206,14 +205,14 @@ export function TeamsPage() {
       <Modal
         open={open}
         onClose={close}
-        title={editing ? 'Sửa nhà' : 'Thêm nhà'}
+        title={editing ? t('teams.editTitle') : t('teams.createTitle')}
         footer={
           <>
             <Button variant="secondary" onClick={close}>
-              Huỷ
+              {tc('actions.cancel')}
             </Button>
             <Button loading={save.isPending} onClick={() => save.mutate()}>
-              Lưu
+              {tc('actions.save')}
             </Button>
           </>
         }
@@ -225,7 +224,7 @@ export function TeamsPage() {
             save.mutate();
           }}
         >
-          <Field label="Mã nhà" htmlFor="team-code" hint="Chữ/số, dùng nội bộ, ví dụ lan.">
+          <Field label={t('teams.code')} htmlFor="team-code" hint={t('teams.codeHint')}>
             <Input
               id="team-code"
               required
@@ -233,7 +232,7 @@ export function TeamsPage() {
               onChange={(event) => setForm((current) => ({ ...current, code: event.target.value }))}
             />
           </Field>
-          <Field label="Tên" htmlFor="team-name">
+          <Field label={t('teams.name')} htmlFor="team-name">
             <Input
               id="team-name"
               required
@@ -241,21 +240,21 @@ export function TeamsPage() {
               onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
             />
           </Field>
-          <Field label="Tên hiển thị" htmlFor="team-display">
+          <Field label={t('teams.displayName')} htmlFor="team-display">
             <Input
               id="team-display"
               value={form.displayName}
               onChange={(event) =>
                 setForm((current) => ({ ...current, displayName: event.target.value }))
               }
-              placeholder="Nhà Lan"
+              placeholder={t('teams.displayNamePlaceholder')}
             />
           </Field>
           <TeamColorField
             value={form.color}
             onChange={(color) => setForm((current) => ({ ...current, color }))}
           />
-          <Field label="Thứ tự" htmlFor="team-sort">
+          <Field label={t('teams.sortOrder')} htmlFor="team-sort">
             <Input
               id="team-sort"
               type="number"

@@ -1,6 +1,7 @@
 import { X } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useEffect, useId, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from './Button';
 
 export function Modal({
@@ -16,6 +17,7 @@ export function Modal({
   children: ReactNode;
   footer?: ReactNode;
 }) {
+  const { t } = useTranslation('common');
   const dialog = useRef<HTMLDialogElement>(null);
   const titleId = useId();
   useEffect(() => {
@@ -36,7 +38,7 @@ export function Modal({
         <h2 id={titleId} className="text-base font-semibold">
           {title}
         </h2>
-        <Button variant="ghost" size="icon" aria-label="Đóng" onClick={onClose}>
+        <Button variant="ghost" size="icon" aria-label={t('modal.close')} onClick={onClose}>
           <X className="h-5 w-5" />
         </Button>
       </div>
