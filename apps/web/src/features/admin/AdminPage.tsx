@@ -126,6 +126,8 @@ export function AdminPage() {
                   title={user.fullName}
                   subtitle={`${user.email} · @${user.username}`}
                   badge={user.emailVerifiedAt ? t('users.verified') : t('users.unverified')}
+                  avatarUrl={user.avatarUrl}
+                  email={user.email}
                 >
                   <Select
                     aria-label={t('users.roleOf', { email: user.email })}

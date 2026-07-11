@@ -1,20 +1,26 @@
 import type { ReactNode } from 'react';
 import { Badge } from '../../components/ui/Badge';
 import { Card } from '../../components/ui/Card';
+import { UserAvatar } from '../../components/ui/UserAvatar';
 
 export function AdminRow({
   title,
   subtitle,
   badge,
+  avatarUrl,
+  email,
   children,
 }: {
   title: string;
   subtitle: string;
   badge: string;
+  avatarUrl?: string | null;
+  email?: string;
   children?: ReactNode;
 }) {
   return (
     <article className="flex flex-wrap items-center gap-3 border-b border-[var(--border)] p-4 last:border-0">
+      <UserAvatar name={title} email={email} avatarUrl={avatarUrl} size="md" />
       <div className="min-w-0 flex-1">
         <h2 className="m-0 break-words text-sm font-medium">{title}</h2>
         <p className="m-0 break-words text-sm text-[var(--muted-foreground)]">{subtitle}</p>

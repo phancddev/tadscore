@@ -6,6 +6,7 @@ import { useAuth } from '../../app/AuthProvider';
 import { LanguageSwitcher } from '../../i18n/LanguageSwitcher';
 import { api } from '../../lib/api';
 import { cn } from '../../lib/cn';
+import { UserAvatar } from '../ui/UserAvatar';
 import { Brand } from './Brand';
 
 export function AppLayout() {
@@ -65,7 +66,15 @@ export function AppLayout() {
         <Brand />
         <div className="mt-8">{nav()}</div>
         <div className="mt-auto border-t border-[var(--border)] pt-4">
-          <p className="mb-2 truncate px-3 text-sm font-medium">{user?.fullName}</p>
+          <div className="mb-2 flex items-center gap-3 px-3">
+            <UserAvatar
+              name={user?.fullName}
+              email={user?.email}
+              avatarUrl={user?.avatarUrl}
+              size="sm"
+            />
+            <p className="m-0 min-w-0 truncate text-sm font-medium">{user?.fullName}</p>
+          </div>
           <div className="mb-2 px-3">
             <LanguageSwitcher />
           </div>

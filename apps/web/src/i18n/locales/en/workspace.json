@@ -89,6 +89,8 @@
     "roleOf": "Role of {{email}}",
     "removeAria": "Remove {{email}}",
     "revoked": "Invitation revoked",
+    "removed": "Member removed from workspace",
+    "roleUpdated": "Member role updated",
     "grantedRole": "Granted role"
   },
   "settings": {

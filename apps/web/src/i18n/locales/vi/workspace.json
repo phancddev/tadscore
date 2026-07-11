@@ -89,6 +89,8 @@
     "roleOf": "Quyền của {{email}}",
     "removeAria": "Gỡ {{email}}",
     "revoked": "Đã thu hồi lời mời",
+    "removed": "Đã gỡ thành viên khỏi workspace",
+    "roleUpdated": "Đã cập nhật quyền thành viên",
     "grantedRole": "Quyền được cấp"
   },
   "settings": {

@@ -1,21 +1,24 @@
 import { useMutation } from '@tanstack/react-query';
 import { Camera, KeyRound, MailCheck, Save } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../app/AuthProvider';
 import { Alert } from '../../components/ui/Alert';
+import { AvatarCropModal } from '../../components/ui/AvatarCropModal';
 import { Button } from '../../components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
 import { Field } from '../../components/ui/Field';
 import { Input } from '../../components/ui/Input';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { useToast } from '../../components/ui/Toast';
+import { UserAvatar } from '../../components/ui/UserAvatar';
 import { api } from '../../lib/api';
 
 export function ProfilePage() {
   const { t } = useTranslation('auth');
   const { user, refresh } = useAuth();
   const toast = useToast();
+  const fileInput = useRef<HTMLInputElement>(null);
   const [fullName, setFullName] = useState('');
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
@@ -24,6 +27,8 @@ export function ProfilePage() {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [logoutOthers, setLogoutOthers] = useState(true);
+  const [cropFile, setCropFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
   useEffect(() => {
     if (user) {
       setFullName(user.fullName);
@@ -58,15 +63,23 @@ export function ProfilePage() {
       toast(t('profile.passwordChanged'));
     },
   });
-  const upload = async (file?: File) => {
+  const pickFile = (file?: File) => {
     if (!file) return;
+    if (file.size > 8_000_000) return toast(t('profile.avatarTooLarge'), 'error');
+    setCropFile(file);
+  };
+  const uploadCropped = async (file: File) => {
     if (file.size > 2_000_000) return toast(t('profile.avatarTooLarge'), 'error');
+    setUploading(true);
     try {
       await api.auth.avatar(file);
       await refresh();
       toast(t('profile.avatarUpdated'));
     } catch (error) {
       toast(error instanceof Error ? error.message : t('profile.avatarFailed'), 'error');
+    } finally {
+      setUploading(false);
+      if (fileInput.current) fileInput.current.value = '';
     }
   };
   return (
@@ -75,26 +88,25 @@ export function ProfilePage() {
       <div className="grid gap-5 lg:grid-cols-[.7fr_1.3fr]">
         <Card>
           <CardContent className="pt-5">
-            <div className="relative mx-auto h-28 w-28 overflow-hidden rounded-full border border-[var(--border)] bg-[var(--muted)]">
-              <span className="grid h-full place-items-center text-4xl font-semibold text-[var(--muted-foreground)]">
-                {user?.fullName?.slice(0, 1)}
-              </span>
-              {user?.avatarUrl && (
-                <img
-                  className="absolute inset-0 h-full w-full object-cover"
-                  src={user.avatarUrl}
-                  alt={t('profile.avatarAlt')}
-                />
-              )}
+            <div className="mx-auto w-fit">
+              <UserAvatar
+                name={user?.fullName}
+                email={user?.email}
+                avatarUrl={user?.avatarUrl}
+                size="xl"
+                alt={t('profile.avatarAlt')}
+              />
             </div>
             <label className="mx-auto mt-4 flex min-h-11 w-fit cursor-pointer items-center gap-2 rounded-[var(--radius)] border border-[var(--border)] px-4 text-sm font-medium hover:bg-[var(--muted)]">
               <Camera className="h-4 w-4" />
-              {t('profile.changePhoto')}
+              {uploading ? t('profile.uploading') : t('profile.changePhoto')}
               <input
+                ref={fileInput}
                 className="sr-only"
                 type="file"
                 accept="image/jpeg,image/png,image/webp"
-                onChange={(event) => upload(event.target.files?.[0])}
+                disabled={uploading}
+                onChange={(event) => pickFile(event.target.files?.[0])}
               />
             </label>
             <p className="mt-3 text-center text-xs text-[var(--muted-foreground)]">
@@ -222,6 +234,18 @@ export function ProfilePage() {
           </Card>
         </div>
       </div>
+      <AvatarCropModal
+        open={!!cropFile}
+        file={cropFile}
+        onClose={() => {
+          setCropFile(null);
+          if (fileInput.current) fileInput.current.value = '';
+        }}
+        onConfirm={(file) => {
+          setCropFile(null);
+          void uploadCropped(file);
+        }}
+      />
     </div>
   );
 }

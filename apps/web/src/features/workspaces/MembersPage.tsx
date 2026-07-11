@@ -14,6 +14,7 @@ import { PageHeader } from '../../components/ui/PageHeader';
 import { Select } from '../../components/ui/Select';
 import { EmptyState, ErrorState, LoadingState } from '../../components/ui/State';
 import { useToast } from '../../components/ui/Toast';
+import { UserAvatar } from '../../components/ui/UserAvatar';
 import { api } from '../../lib/api';
 import type { Invitation, WorkspaceRole } from '../../lib/types';
 
@@ -75,6 +76,23 @@ export function MembersPage() {
       toast(t('members.linkCopied'));
     },
   });
+  const updateRole = useMutation({
+    mutationFn: ({ userId, nextRole }: { userId: string; nextRole: string }) =>
+      api.workspaces.updateMember(workspaceId, userId, nextRole),
+    onSuccess: () => {
+      refresh();
+      toast(t('members.roleUpdated'));
+    },
+    onError: (error: Error) => toast(error.message || tc('states.requestFailed'), 'error'),
+  });
+  const removeMember = useMutation({
+    mutationFn: (userId: string) => api.workspaces.removeMember(workspaceId, userId),
+    onSuccess: () => {
+      refresh();
+      toast(t('members.removed'));
+    },
+    onError: (error: Error) => toast(error.message || tc('states.requestFailed'), 'error'),
+  });
   if (members.isLoading || workspace.isLoading)
     return (
       <div className="page-shell">
@@ -92,6 +110,7 @@ export function MembersPage() {
   const status = workspace.data?.status || '';
   const statusLabel = status ? tc(`status.${status}`, { defaultValue: status }) : status;
   const locale = i18n.language === 'en' ? 'en-US' : 'vi-VN';
+  const activeMembers = (members.data || []).filter((member) => member.status === 'active');
   return (
     <div className="page-shell">
       <PageHeader
@@ -117,61 +136,63 @@ export function MembersPage() {
           <span>{t('members.readonly', { status: statusLabel })}</span>
         </Alert>
       )}
-      {!members.data?.length ? (
+      {!activeMembers.length ? (
         <EmptyState title={t('members.emptyTitle')} message={t('members.emptyMessage')} />
       ) : (
         <Card className="divide-y divide-[var(--border)] overflow-hidden">
-          {members.data.map((member) => (
-            <article key={member.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
-              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-[var(--border)] bg-[var(--muted)]/50 text-sm font-semibold">
-                {(member.fullName || member.email).slice(0, 1).toUpperCase()}
-              </span>
-              <div className="min-w-0 flex-1">
-                <h2 className="m-0 truncate text-sm font-semibold">
-                  {member.fullName || member.email}
-                </h2>
-                <p className="m-0 truncate text-sm text-[var(--muted-foreground)]">
-                  {member.email}
-                </p>
-              </div>
-              <Badge tone={member.status === 'active' ? 'success' : 'warning'}>
-                {member.status}
-              </Badge>
-              <Select
-                aria-label={t('members.roleOf', { email: member.email })}
-                className="!w-auto min-w-[7.5rem]"
-                value={member.role}
-                disabled={!canManage || member.role === 'owner'}
-                onChange={async (event) => {
-                  await api.workspaces.updateMember(workspaceId, member.id, event.target.value);
-                  refresh();
-                }}
-              >
-                <option value="owner" disabled>
-                  {tc('roles.owner')}
-                </option>
-                <option value="admin">{tc('roles.admin')}</option>
-                <option value="scorer">{tc('roles.scorer')}</option>
-                <option value="viewer">{tc('roles.viewer')}</option>
-              </Select>
-              {canManage && member.role !== 'owner' && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  aria-label={t('members.removeAria', { email: member.email })}
-                  className="text-[var(--destructive)]"
-                  onClick={async () => {
-                    if (confirm(t('members.confirmRemove'))) {
-                      await api.workspaces.removeMember(workspaceId, member.id);
-                      refresh();
-                    }
-                  }}
+          {activeMembers.map((member) => {
+            const canEditMember = canManage && member.role !== 'owner';
+            return (
+              <article key={member.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
+                <UserAvatar
+                  name={member.fullName}
+                  email={member.email}
+                  avatarUrl={member.avatarUrl}
+                  size="md"
+                />
+                <div className="min-w-0 flex-1">
+                  <h2 className="m-0 truncate text-sm font-semibold">
+                    {member.fullName || member.email}
+                  </h2>
+                  <p className="m-0 truncate text-sm text-[var(--muted-foreground)]">
+                    {member.email}
+                  </p>
+                </div>
+                <Badge tone="success">{tc('status.active')}</Badge>
+                <Select
+                  aria-label={t('members.roleOf', { email: member.email })}
+                  className="!w-auto min-w-[7.5rem]"
+                  value={member.role}
+                  disabled={!canEditMember || updateRole.isPending}
+                  onChange={(event) =>
+                    updateRole.mutate({ userId: member.id, nextRole: event.target.value })
+                  }
                 >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              )}
-            </article>
-          ))}
+                  <option value="owner" disabled>
+                    {tc('roles.owner')}
+                  </option>
+                  <option value="admin">{tc('roles.admin')}</option>
+                  <option value="scorer">{tc('roles.scorer')}</option>
+                  <option value="viewer">{tc('roles.viewer')}</option>
+                </Select>
+                {canEditMember && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label={t('members.removeAria', { email: member.email })}
+                    className="text-[var(--destructive)]"
+                    loading={removeMember.isPending && removeMember.variables === member.id}
+                    disabled={removeMember.isPending}
+                    onClick={() => {
+                      if (confirm(t('members.confirmRemove'))) removeMember.mutate(member.id);
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                )}
+              </article>
+            );
+          })}
         </Card>
       )}
       {roleCanManage && (
@@ -193,9 +214,16 @@ export function MembersPage() {
                   canRevoke={canManage}
                   locale={locale}
                   onRevoke={async () => {
-                    await api.workspaces.revokeInvite(workspaceId, item.id);
-                    refresh();
-                    toast(t('members.revoked'));
+                    try {
+                      await api.workspaces.revokeInvite(workspaceId, item.id);
+                      refresh();
+                      toast(t('members.revoked'));
+                    } catch (error) {
+                      toast(
+                        error instanceof Error ? error.message : tc('states.requestFailed'),
+                        'error',
+                      );
+                    }
                   }}
                 />
               ))}

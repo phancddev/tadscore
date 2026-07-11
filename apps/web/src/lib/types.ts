@@ -107,6 +107,7 @@ export type Member = {
   email: string;
   username?: string;
   fullName?: string;
+  avatarUrl?: string | null;
   role: WorkspaceRole;
   status: 'active' | 'removed';
   joinedAt?: string;
