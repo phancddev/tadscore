@@ -57,7 +57,7 @@ Prefix: `/api/workspaces/:workspaceId`.
 | Method/path suffix                  | Mục đích                           | Quyền    |
 | ----------------------------------- | ---------------------------------- | -------- |
 | `GET /activities`                   | Danh sách activity                 | `viewer` |
-| `GET /ranking`                      | Ranking nội bộ                     | `viewer` |
+| `GET /ranking`                      | Ranking nội bộ (+ shop/limits từ snapshot) | `viewer` |
 | `GET /ranking/:teamId`              | Breakdown team                     | `viewer` |
 | `GET /ledger`                       | Audit scoring có filter/pagination | `viewer` |
 | `POST /games`                       | Submit đủ kết quả rank của game    | `scorer` |
@@ -73,6 +73,14 @@ Mọi lệnh ghi scoring nhận `idempotencyKey` trong body. Key phải được
 vụ và giữ nguyên khi retry cùng request. Không tái sử dụng key cho nội dung khác. API trả lại kết
 quả cũ khi request trùng hợp lệ, và trả `IDEMPOTENCY_CONFLICT` khi cùng key trỏ tới payload hoặc
 submission khác.
+
+### Ranking payload và shop UI
+
+`GET /ranking` (và public ranking) trả leaderboard từ ledger + rule snapshot của workspace. Response
+còn gồm block `shop` (giá piece/item, `minimumPieces`, `pieceLimit`) lấy từ **rule snapshot**, không
+từ registry live, để UI shop/limits khớp hành vi scoring đã khóa. `pieceLimit.active` phụ thuộc
+activity gate trong snapshot (ví dụ activity finalize đã mở limit hay chưa). Client không được tự
+bịa giá/limit; mọi purchase/adjustment vẫn enforce server-side trên snapshot.
 
 ### Submit game
 

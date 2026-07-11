@@ -46,7 +46,9 @@ Expected coverage includes:
 - scoring, ranking, idempotency conflicts, purchases, affordability, and phase limits;
 - locked/archived read-only behavior;
 - atomic game reversal and reverse-key conflict on a different submission;
-- public ranking privacy, link revoke, and public team detail redaction;
+- public ranking: create-once, token re-display on list, dual token/slug access, independent
+  `tokenEnabled`/`slugEnabled` (private path → 404), regenerate rotates token only, revoke → 404,
+  and public team detail PII redaction;
 - audit logs, outbox, health, Swagger JSON, and stdin account CLI unit coverage.
 
 ## Isolated Docker database

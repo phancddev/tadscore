@@ -3,6 +3,7 @@
 ## Lệnh thường dùng
 
 ```bash
+make setup              # merge/gen .env từ .env.example (giữ value sẵn có)
 make up                 # build/start nền
 make ps                 # trạng thái và health
 make logs               # follow log toàn stack
@@ -12,6 +13,14 @@ make test               # test workspace
 make build              # build toàn workspace
 make validate           # line/migration/Compose checks
 make down               # stop, giữ volume
+```
+
+Sinh env thủ công / dry-run:
+
+```bash
+./scripts/generate-env.sh
+./scripts/generate-env.sh -n    # in ra stdout, không ghi .env
+./scripts/generate-env.sh -f    # force gen lại POSTGRES_PASSWORD + DATABASE_URL
 ```
 
 Nếu `corepack` trên host lỗi chữ ký khi resolve pnpm, dùng trực tiếp:

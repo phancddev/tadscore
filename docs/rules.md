@@ -37,6 +37,10 @@ The rule engine validates this shape and exposes pure helpers for activity award
 and ranking. API routes never trust client-supplied award values; they derive every ledger delta
 from the workspace rule snapshot.
 
+Shop UI and purchase limits also follow the workspace snapshot: ranking/shop payloads expose piece
+and item prices plus `pieceLimit` (activity key, max quantity, whether the gate is still active).
+Editing live files under `rule-config/` does not change prices or limits for existing workspaces.
+
 ## Versioning
 
 Do not mutate a deployed rule version to change event math. Add a new version instead:

@@ -88,14 +88,20 @@ request; super admin có thể xem và retry email lỗi.
 
 ## Public ranking và SSE
 
-Mỗi workspace có tối đa một public ranking link. Random token (hiển thị lại được sau khi tạo) và
-custom slug tồn tại song song; `token_enabled` / `slug_enabled` bật-tắt public/private **độc lập**
-cho từng path (path private trả 404). Token vẫn được hash để tương thích legacy; bản ghi mới lưu
-thêm plaintext path token để admin copy lại mà không regenerate. Link có thể expire, revoke, hoặc
-regenerate (đổi token, giữ slug và visibility từng path).
-React tải snapshot ranking bằng HTTP rồi mở SSE tại
-`/api/public/rankings/:token/events`. Nginx tắt proxy buffering/cache và giữ kết nối dài; khi có
-event `ranking`, client refetch snapshot mới.
+Mỗi workspace có tối đa một public ranking link (create-once). Random token (hiển thị lại được sau
+khi tạo) và custom slug tồn tại song song; `token_enabled` / `slug_enabled` bật-tắt public/private
+**độc lập** cho từng path (path private trả 404). Token vẫn được hash để tương thích legacy; bản
+ghi mới lưu thêm plaintext path token để admin copy lại mà không regenerate. Link có thể expire,
+revoke (tắt cả hai path), hoặc regenerate (đổi token, giữ slug và visibility từng path).
+
+UI admin (`/workspaces/:id/ranking`) quản lý một card link: copy/mở cả hai URL, toggle public/private
+riêng cho token và slug, sửa custom slug, regenerate token. Public page mở bằng `/ranking/:key` hoặc
+`/r/:key` với `key` là token **hoặc** slug.
+
+React tải snapshot ranking bằng HTTP rồi mở SSE tại `/api/public/rankings/:key/events`. SSE re-check
+visibility của đúng path đang dùng (token vs slug) trên mỗi event/heartbeat — private giữa chừng sẽ
+đóng stream. Nginx tắt proxy buffering/cache và giữ kết nối dài; khi có event `ranking`, client
+refetch snapshot mới.
 
 ## Persistence
 

@@ -27,5 +27,6 @@ Quick start ngắn gọn vẫn nằm tại [README gốc](../README.md).
 2. Migration đã deploy là bất biến; thay đổi schema bằng migration mới.
 3. Điểm là ledger append-only; sửa sai bằng reversal, không sửa/xóa lịch sử.
 4. Backend luôn kiểm tra quyền. Ẩn nút ở frontend không phải là kiểm soát truy cập.
-5. Public ranking chỉ read-only và không được trả về dữ liệu cá nhân của member.
+5. Public ranking chỉ read-only và không được trả về dữ liệu cá nhân của member. Mỗi workspace một
+   link (create-once); token và custom slug có public/private độc lập.
 6. Workspace giữ snapshot + hash của rule tại thời điểm tạo để kết quả cũ không đổi âm thầm.

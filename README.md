@@ -18,14 +18,16 @@ Comprehensive documentation starts at [docs/README.md](docs/README.md), includin
 
 ```bash
 make setup
-# Edit .env and replace every CHANGE_ME value.
+# Review .env — generate-env.sh keeps existing values, fills missing keys,
+# and generates POSTGRES_PASSWORD + DATABASE_URL when still CHANGE_ME.
 make up
 make logs
 ```
 
-Choose a local database password and put the same value into `POSTGRES_PASSWORD` and the password
-segment of `DATABASE_URL`.
-Neither `.env.example` nor the application contains a default account or usable secret.
+`make setup` runs `./scripts/generate-env.sh`. Re-running it is safe: real values are preserved;
+only missing keys or `CHANGE_ME` placeholders are filled. Use `./scripts/generate-env.sh -f` to
+force a new database password (and a matching `DATABASE_URL`). Neither `.env.example` nor the
+application contains a default account or usable secret.
 
 Services become available at:
 
@@ -93,7 +95,7 @@ packages/rule-engine/     Deterministic scoring and ranking engine
 rule-config/              Immutable, versioned rule definitions
 database/migrations/      Sequential dbmate SQL migrations
 docker/                   Production container and gateway configuration
-scripts/                  Account and repository validation tools
+scripts/                  Env generation, account CLI, quality gates
 rule/                     Original source rules
 samples/                  Original spreadsheet samples
 ```

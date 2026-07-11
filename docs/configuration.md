@@ -1,13 +1,31 @@
 # Cấu hình môi trường
 
-Copy `.env.example` thành `.env`, thay mọi giá trị `CHANGE_ME`, rồi restart stack sau mỗi thay đổi:
+Sinh / merge `.env` từ `.env.example` bằng script (khuyến nghị). Script **giữ nguyên** giá trị đã có,
+chỉ điền key thiếu hoặc còn placeholder `CHANGE_ME`, và gen `POSTGRES_PASSWORD` + đồng bộ
+`DATABASE_URL` khi cần:
 
 ```bash
-cp .env.example .env
+make setup
+# hoặc
+./scripts/generate-env.sh
+./scripts/generate-env.sh -n          # dry-run, không ghi file
+./scripts/generate-env.sh -f          # force gen lại password + DATABASE_URL
 docker compose up --build -d
 ```
 
-Không commit `.env`. File example không chứa secret dùng được và không chứa account mẫu.
+Khi ghi đè, script backup `.env` → `.env.bak`. Không commit `.env` hay `.env.bak`. File example
+không chứa secret dùng được và không chứa account mẫu.
+
+### Hành vi `scripts/generate-env.sh`
+
+| Tình huống | Kết quả |
+| ---------- | ------- |
+| Key đã có value thật (không chứa `CHANGE_ME`) | Giữ nguyên |
+| Key thiếu so với `.env.example` | Lấy giá trị example |
+| Value còn `CHANGE_ME` | Coi như chưa set; secret được gen, key khác lấy example |
+| `POSTGRES_PASSWORD` thiếu/placeholder | Gen random 32 ký tự (url-safe) |
+| `DATABASE_URL` thiếu/placeholder hoặc password vừa gen | Rebuild từ `POSTGRES_USER` / `PASSWORD` / `DB` |
+| Key chỉ có trong `.env` (không có trong example) | Giữ lại ở cuối file |
 
 ## Compose và URL
 

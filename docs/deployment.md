@@ -6,7 +6,7 @@ Yêu cầu: Docker Engine/Desktop có Compose v2. `make` chỉ là tiện ích, 
 
 ```bash
 make setup
-# Sửa .env, thay mọi CHANGE_ME và giữ password trong DATABASE_URL đồng bộ.
+# Review .env (script đã gen password nếu còn CHANGE_ME; giữ các value sẵn có).
 make up
 make ps
 ```
@@ -14,7 +14,8 @@ make ps
 Hoặc không dùng Make:
 
 ```bash
-cp .env.example .env
+./scripts/generate-env.sh
+# fallback thủ công: cp .env.example .env  rồi sửa CHANGE_ME
 docker compose up --build -d
 docker compose ps
 ```
