@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { join } from 'node:path';
 import { expect } from 'vitest';
 
 export const password = 'TestPass123!';
@@ -99,4 +100,27 @@ export function createApiHarness(
   }
 
   return { createWorkspace, invite, login, register, request };
+}
+
+export type ApiHarness = ReturnType<typeof createApiHarness>;
+
+export async function bootIntegrationApp() {
+  process.env.NODE_ENV = 'test';
+  process.env.WEB_ORIGIN = 'http://localhost:1107';
+  process.env.RULE_CONFIG_PATH = join(process.cwd(), '../../rule-config');
+  process.env.UPLOAD_DIR = '/tmp/tadscore-api-it';
+  process.env.AUTH_OTP_RESEND_COOLDOWN_SECONDS = '0';
+  const { resetEnvForTest } = await import('../config/env.js');
+  resetEnvForTest();
+  const { pool } = await import('../lib/db.js');
+  const { buildApp } = await import('../app.js');
+  const app = await buildApp();
+  const api = createApiHarness(app, pool, resetEnvForTest);
+  await pool.query(`
+    TRUNCATE audit_logs,email_outbox,public_ranking_links,invitation_acceptances,
+    workspace_invitations,team_inventory,purchases,score_ledger,activity_results,
+    result_submissions,activities,teams,workspace_members,workspaces,email_verifications,
+    auth_sessions,auth_rate_limits,users RESTART IDENTITY CASCADE
+  `);
+  return { app, pool, api, resetEnvForTest };
 }

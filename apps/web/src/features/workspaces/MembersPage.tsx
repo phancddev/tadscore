@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Copy, Link2, MailPlus, Trash2 } from 'lucide-react';
+import { Copy, MailPlus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
@@ -16,7 +16,8 @@ import { EmptyState, ErrorState, LoadingState } from '../../components/ui/State'
 import { useToast } from '../../components/ui/Toast';
 import { UserAvatar } from '../../components/ui/UserAvatar';
 import { api } from '../../lib/api';
-import type { Invitation, WorkspaceRole } from '../../lib/types';
+import type { WorkspaceRole } from '../../lib/types';
+import { InviteRow, RoleField } from './MembersInviteParts';
 
 const copy = async (value: string) => navigator.clipboard.writeText(value);
 
@@ -102,7 +103,12 @@ export function MembersPage() {
   if (members.isError || workspace.isError)
     return (
       <div className="page-shell">
-        <ErrorState retry={() => { members.refetch(); workspace.refetch(); }} />
+        <ErrorState
+          retry={() => {
+            members.refetch();
+            workspace.refetch();
+          }}
+        />
       </div>
     );
   const roleCanManage = ['owner', 'admin'].includes(workspace.data?.role || '');
@@ -197,7 +203,9 @@ export function MembersPage() {
       )}
       {roleCanManage && (
         <section className="mt-6">
-          <h2 className="mb-3 m-0 text-base font-semibold tracking-tight">{t('members.pending')}</h2>
+          <h2 className="mb-3 m-0 text-base font-semibold tracking-tight">
+            {t('members.pending')}
+          </h2>
           {invitations.isLoading ? (
             <LoadingState rows={1} />
           ) : !invitations.data?.length ? (
@@ -258,65 +266,5 @@ export function MembersPage() {
         </form>
       </Modal>
     </div>
-  );
-}
-
-function RoleField({
-  role,
-  setRole,
-}: {
-  role: string;
-  setRole: (role: Exclude<WorkspaceRole, 'owner'>) => void;
-}) {
-  const { t } = useTranslation('workspace');
-  const { t: tc } = useTranslation('common');
-  return (
-    <Field label={t('members.grantedRole')} htmlFor="invite-role">
-      <Select
-        id="invite-role"
-        value={role}
-        onChange={(event) => setRole(event.target.value as Exclude<WorkspaceRole, 'owner'>)}
-      >
-        <option value="admin">{tc('roles.admin')}</option>
-        <option value="scorer">{tc('roles.scorer')}</option>
-        <option value="viewer">{tc('roles.viewer')}</option>
-      </Select>
-    </Field>
-  );
-}
-
-function InviteRow({
-  invite,
-  canRevoke,
-  locale,
-  onRevoke,
-}: {
-  invite: Invitation;
-  canRevoke: boolean;
-  locale: string;
-  onRevoke: () => void;
-}) {
-  const { t } = useTranslation('workspace');
-  const { t: tc } = useTranslation('common');
-  return (
-    <Card className="flex flex-wrap items-center gap-3 p-4">
-      <Link2 className="h-4 w-4 shrink-0 text-[var(--muted-foreground)]" />
-      <div className="min-w-0 flex-1">
-        <strong className="text-sm font-semibold">
-          {invite.kind === 'email' ? invite.email : t('members.shareLink')}
-        </strong>
-        <p className="m-0 text-sm text-[var(--muted-foreground)]">
-          {tc(`roles.${invite.role}`, { defaultValue: invite.role })} ·{' '}
-          {t('members.expires', { date: new Date(invite.expiresAt).toLocaleString(locale) })} ·{' '}
-          {t('members.uses', { used: invite.useCount || 0, max: invite.maxUses })}
-        </p>
-      </div>
-      <Badge tone={invite.status === 'pending' ? 'success' : 'warning'}>{invite.status}</Badge>
-      {canRevoke && invite.status === 'pending' && (
-        <Button variant="ghost" className="text-[var(--destructive)]" onClick={onRevoke}>
-          {t('members.revoke')}
-        </Button>
-      )}
-    </Card>
   );
 }
