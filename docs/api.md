@@ -56,18 +56,18 @@ share vĩnh viễn cho quyền edit. Owner không được cấp qua invitation.
 
 Prefix: `/api/workspaces/:workspaceId`.
 
-| Method/path suffix                  | Mục đích                           | Quyền    |
-| ----------------------------------- | ---------------------------------- | -------- |
-| `GET /activities`                   | Danh sách activity                 | `viewer` |
+| Method/path suffix                  | Mục đích                                   | Quyền    |
+| ----------------------------------- | ------------------------------------------ | -------- |
+| `GET /activities`                   | Danh sách activity                         | `viewer` |
 | `GET /ranking`                      | Ranking nội bộ (+ shop/limits từ snapshot) | `viewer` |
-| `GET /ranking/:teamId`              | Breakdown team                     | `viewer` |
-| `GET /ledger`                       | Audit scoring có filter/pagination | `viewer` |
-| `POST /games`                       | Submit đủ kết quả rank của game    | `scorer` |
-| `POST /games/:submissionId/reverse` | Reverse toàn submission            | `admin`  |
-| `POST /adjustments`                 | Speech/violation/adjustment        | `scorer` |
-| `POST /purchases`                   | Mua mảnh/vật phẩm                  | `scorer` |
-| `POST /ledger/:entryId/reverse`     | Reverse một entry hợp lệ           | `admin`  |
-| `GET /export.json`                  | Export ranking + ledger            | `viewer` |
+| `GET /ranking/:teamId`              | Breakdown team                             | `viewer` |
+| `GET /ledger`                       | Audit scoring có filter/pagination         | `viewer` |
+| `POST /games`                       | Submit đủ kết quả rank của game            | `scorer` |
+| `POST /games/:submissionId/reverse` | Reverse toàn submission                    | `admin`  |
+| `POST /adjustments`                 | Speech/violation/adjustment                | `scorer` |
+| `POST /purchases`                   | Mua mảnh/vật phẩm                          | `scorer` |
+| `POST /ledger/:entryId/reverse`     | Reverse một entry hợp lệ                   | `admin`  |
+| `GET /export.json`                  | Export ranking + ledger                    | `viewer` |
 
 ### Idempotency
 
@@ -103,16 +103,16 @@ Mỗi workspace có **tối đa một** public ranking link (create-once). Link 
 slug tồn tại song song; **public/private độc lập** qua `tokenEnabled` và `slugEnabled` (path private
 trả 404, path còn lại vẫn hoạt động).
 
-| Method/path                                                | Mục đích                                      | Truy cập        |
-| ---------------------------------------------------------- | --------------------------------------------- | --------------- |
-| `GET /api/workspaces/:id/public-links`                     | List (gồm token + url + slugUrl)              | `admin`         |
-| `POST /api/workspaces/:id/public-links`                    | Tạo một lần; nếu đã có thì trả link hiện tại  | `admin`         |
-| `PATCH /api/workspaces/:id/public-links/:linkId`           | Cập nhật slug / label / public-private        | `admin`         |
-| `DELETE /api/workspaces/:id/public-links/:linkId`          | Revoke (private + revoked)                    | `admin`         |
-| `POST /api/workspaces/:id/public-links/:linkId/regenerate` | Đổi random token (slug giữ nguyên)            | `admin`         |
-| `GET /api/public/rankings/:key`                            | Ranking snapshot (`token` **hoặc** `slug`)    | Public nếu bật  |
-| `GET /api/public/rankings/:key/teams/:teamId`              | Team breakdown                                | Public nếu bật  |
-| `GET /api/public/rankings/:key/events`                     | SSE live update                               | Public nếu bật  |
+| Method/path                                                | Mục đích                                     | Truy cập       |
+| ---------------------------------------------------------- | -------------------------------------------- | -------------- |
+| `GET /api/workspaces/:id/public-links`                     | List (gồm token + url + slugUrl)             | `admin`        |
+| `POST /api/workspaces/:id/public-links`                    | Tạo một lần; nếu đã có thì trả link hiện tại | `admin`        |
+| `PATCH /api/workspaces/:id/public-links/:linkId`           | Cập nhật slug / label / public-private       | `admin`        |
+| `DELETE /api/workspaces/:id/public-links/:linkId`          | Revoke (private + revoked)                   | `admin`        |
+| `POST /api/workspaces/:id/public-links/:linkId/regenerate` | Đổi random token (slug giữ nguyên)           | `admin`        |
+| `GET /api/public/rankings/:key`                            | Ranking snapshot (`token` **hoặc** `slug`)   | Public nếu bật |
+| `GET /api/public/rankings/:key/teams/:teamId`              | Team breakdown                               | Public nếu bật |
+| `GET /api/public/rankings/:key/events`                     | SSE live update                              | Public nếu bật |
 
 Body tạo: `{ slug?, label?, expiresInHours?, isEnabled?, tokenEnabled?, slugEnabled? }`
 (`isEnabled` gán cả hai path). Body PATCH: `{ slug?, label?, isEnabled?, tokenEnabled?,

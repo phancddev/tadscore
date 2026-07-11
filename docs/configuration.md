@@ -18,14 +18,14 @@ không chứa secret dùng được và không chứa account mẫu.
 
 ### Hành vi `scripts/generate-env.sh`
 
-| Tình huống | Kết quả |
-| ---------- | ------- |
-| Key đã có value thật (không chứa `CHANGE_ME`) | Giữ nguyên |
-| Key thiếu so với `.env.example` | Lấy giá trị example |
-| Value còn `CHANGE_ME` | Coi như chưa set; secret được gen, key khác lấy example |
-| `POSTGRES_PASSWORD` thiếu/placeholder | Gen random 32 ký tự (url-safe) |
-| `DATABASE_URL` thiếu/placeholder hoặc password vừa gen | Rebuild từ `POSTGRES_USER` / `PASSWORD` / `DB` |
-| Key chỉ có trong `.env` (không có trong example) | Giữ lại ở cuối file |
+| Tình huống                                             | Kết quả                                                 |
+| ------------------------------------------------------ | ------------------------------------------------------- |
+| Key đã có value thật (không chứa `CHANGE_ME`)          | Giữ nguyên                                              |
+| Key thiếu so với `.env.example`                        | Lấy giá trị example                                     |
+| Value còn `CHANGE_ME`                                  | Coi như chưa set; secret được gen, key khác lấy example |
+| `POSTGRES_PASSWORD` thiếu/placeholder                  | Gen random 32 ký tự (url-safe)                          |
+| `DATABASE_URL` thiếu/placeholder hoặc password vừa gen | Rebuild từ `POSTGRES_USER` / `PASSWORD` / `DB`          |
+| Key chỉ có trong `.env` (không có trong example)       | Giữ lại ở cuối file                                     |
 
 ## Compose và URL
 

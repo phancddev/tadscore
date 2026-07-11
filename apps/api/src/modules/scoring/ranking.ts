@@ -121,10 +121,7 @@ type LedgerRow = {
 };
 
 /** Active (non-reversed, non-reversal) ledger rows — used for public ranking & stats. */
-function isActiveLedgerEntry(entry: {
-  reversedAt: Date | null;
-  reversesEntryId: string | null;
-}) {
+function isActiveLedgerEntry(entry: { reversedAt: Date | null; reversesEntryId: string | null }) {
   return !entry.reversedAt && !entry.reversesEntryId;
 }
 
@@ -168,9 +165,7 @@ function buildTeamDetail(
       pieces: entry.pieceDelta,
       createdAt: entry.createdAt,
     }));
-  const adjustments = active.filter((entry) =>
-    ['adjustment', 'penalty'].includes(entry.entryType),
-  );
+  const adjustments = active.filter((entry) => ['adjustment', 'penalty'].includes(entry.entryType));
   return {
     ...team,
     wins,

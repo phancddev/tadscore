@@ -88,7 +88,9 @@ export function LedgerPage() {
                   </div>
                   <p className="m-0 mt-1 text-sm text-[var(--muted-foreground)]">
                     {entry.activityName ||
-                      String(entry.metadata?.reason || entry.metadata?.kind || t('ledger.adjustment'))}
+                      String(
+                        entry.metadata?.reason || entry.metadata?.kind || t('ledger.adjustment'),
+                      )}
                   </p>
                   <p className="m-0 mt-1 text-xs text-[var(--muted-foreground)]">
                     {new Date(entry.createdAt).toLocaleString(locale)} · {entry.createdByName}

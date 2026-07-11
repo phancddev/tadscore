@@ -115,8 +115,7 @@ export function QuickActions({
         mode,
         value: parsed.value,
         reason:
-          reason.trim() ||
-          (parsed.value > 0 ? t('quick.defaultAdd') : t('quick.defaultSubtract')),
+          reason.trim() || (parsed.value > 0 ? t('quick.defaultAdd') : t('quick.defaultSubtract')),
       });
       return;
     }
@@ -124,7 +123,9 @@ export function QuickActions({
       teamId,
       mode,
       value: quantity,
-      reason: reason.trim() || (mode === 'piece' ? t('quick.defaultBuyPiece') : t('quick.defaultBuyItem')),
+      reason:
+        reason.trim() ||
+        (mode === 'piece' ? t('quick.defaultBuyPiece') : t('quick.defaultBuyItem')),
     });
   };
 
@@ -200,15 +201,21 @@ export function QuickActions({
               >
                 <div>
                   <div className="font-semibold tabular">{team.medals}</div>
-                  <div className="text-xs text-[var(--muted-foreground)]">{tc('metrics.medals')}</div>
+                  <div className="text-xs text-[var(--muted-foreground)]">
+                    {tc('metrics.medals')}
+                  </div>
                 </div>
                 <div>
                   <div className="font-semibold tabular">{team.pieces}</div>
-                  <div className="text-xs text-[var(--muted-foreground)]">{tc('metrics.pieces')}</div>
+                  <div className="text-xs text-[var(--muted-foreground)]">
+                    {tc('metrics.pieces')}
+                  </div>
                 </div>
                 <div>
                   <div className="font-semibold tabular">{team.items}</div>
-                  <div className="text-xs text-[var(--muted-foreground)]">{tc('metrics.items')}</div>
+                  <div className="text-xs text-[var(--muted-foreground)]">
+                    {tc('metrics.items')}
+                  </div>
                 </div>
               </div>
             )}

@@ -172,7 +172,9 @@ export function TeamsPage() {
                       className="text-[var(--destructive)]"
                       loading={remove.isPending}
                       onClick={() => {
-                        if (confirm(t('teams.confirmDelete', { name: team.displayName || team.name })))
+                        if (
+                          confirm(t('teams.confirmDelete', { name: team.displayName || team.name }))
+                        )
                           remove.mutate(team);
                       }}
                     >

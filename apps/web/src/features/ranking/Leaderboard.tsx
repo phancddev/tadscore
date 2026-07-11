@@ -17,12 +17,7 @@ export function Leaderboard({
   const { t: tc } = useTranslation('common');
   const teams = [...ranking.teams].sort((a, b) => a.rank - b.rank);
   const placeLabel = (index: number, rank: number) => {
-    const places = [
-      tr('board.place1'),
-      tr('board.place2'),
-      tr('board.place3'),
-      tr('board.place4'),
-    ];
+    const places = [tr('board.place1'), tr('board.place2'), tr('board.place3'), tr('board.place4')];
     return places[index] || tr('board.placeN', { rank });
   };
   return (
