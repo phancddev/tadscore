@@ -2,15 +2,22 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Copy, Link2, MailPlus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { Alert } from '../../components/ui/Alert';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
+import { Card } from '../../components/ui/Card';
+import { Field } from '../../components/ui/Field';
+import { Input } from '../../components/ui/Input';
 import { Modal } from '../../components/ui/Modal';
+import { PageHeader } from '../../components/ui/PageHeader';
+import { Select } from '../../components/ui/Select';
 import { EmptyState, ErrorState, LoadingState } from '../../components/ui/State';
 import { useToast } from '../../components/ui/Toast';
 import { api } from '../../lib/api';
 import type { Invitation, WorkspaceRole } from '../../lib/types';
 
 const copy = async (value: string) => navigator.clipboard.writeText(value);
+
 export function MembersPage() {
   const { workspaceId = '' } = useParams();
   const client = useQueryClient();
@@ -86,32 +93,30 @@ export function MembersPage() {
   const canManage = roleCanManage && workspace.data?.status === 'active';
   return (
     <div className="page-shell">
-      <header className="mb-7 flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p className="eyebrow">Cộng tác</p>
-          <h1 className="page-title mt-2">Thành viên</h1>
-          <p className="mt-2 muted">Quyền workspace độc lập với quyền hệ thống.</p>
-        </div>
-        {canManage && (
-          <div className="flex flex-wrap gap-2">
-            <Button variant="secondary" loading={share.isPending} onClick={() => share.mutate()}>
-              <Copy className="h-4 w-4" />
-              Tạo link mời
-            </Button>
-            <Button onClick={() => setOpen(true)}>
-              <MailPlus className="h-4 w-4" />
-              Mời qua email
-            </Button>
-          </div>
-        )}
-      </header>
+      <PageHeader
+        title="Thành viên"
+        description="Quyền workspace độc lập với quyền hệ thống."
+        actions={
+          canManage ? (
+            <>
+              <Button variant="secondary" loading={share.isPending} onClick={() => share.mutate()}>
+                <Copy className="h-4 w-4" />
+                Tạo link mời
+              </Button>
+              <Button onClick={() => setOpen(true)}>
+                <MailPlus className="h-4 w-4" />
+                Mời qua email
+              </Button>
+            </>
+          ) : undefined
+        }
+      />
       {roleCanManage && !canManage && (
-        <div
-          role="status"
-          className="mb-5 rounded-xl bg-[var(--warning-soft)] p-4 text-[var(--warning)]"
-        >
-          Workspace đang {workspace.data?.status}; quản lý thành viên và lời mời tạm thời chỉ đọc.
-        </div>
+        <Alert variant="warning" className="mb-5">
+          <span>
+            Workspace đang {workspace.data?.status}; quản lý thành viên và lời mời tạm thời chỉ đọc.
+          </span>
+        </Alert>
       )}
       {!members.data?.length ? (
         <EmptyState
@@ -119,24 +124,29 @@ export function MembersPage() {
           message="Mời người dùng để cùng điều hành workspace."
         />
       ) : (
-        <div className="app-card divide-y divide-[var(--border)]">
+        <Card className="divide-y divide-[var(--border)] overflow-hidden">
           {members.data.map((member) => (
-            <article key={member.id} className="flex flex-wrap items-center gap-3 p-4">
-              <span className="grid h-11 w-11 place-items-center rounded-full bg-[var(--primary-soft)] font-bold text-[var(--primary)]">
+            <article
+              key={member.id}
+              className="flex flex-wrap items-center gap-3 px-4 py-3"
+            >
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-[var(--border)] bg-[var(--muted)]/50 text-sm font-semibold">
                 {(member.fullName || member.email).slice(0, 1).toUpperCase()}
               </span>
               <div className="min-w-0 flex-1">
-                <h2 className="m-0 truncate text-base font-bold">
+                <h2 className="m-0 truncate text-sm font-semibold">
                   {member.fullName || member.email}
                 </h2>
-                <p className="m-0 truncate text-sm muted">{member.email}</p>
+                <p className="m-0 truncate text-sm text-[var(--muted-foreground)]">
+                  {member.email}
+                </p>
               </div>
               <Badge tone={member.status === 'active' ? 'success' : 'warning'}>
                 {member.status}
               </Badge>
-              <select
+              <Select
                 aria-label={`Quyền của ${member.email}`}
-                className="input !w-auto"
+                className="!w-auto min-w-[7.5rem]"
                 value={member.role}
                 disabled={!canManage || member.role === 'owner'}
                 onChange={async (event) => {
@@ -150,11 +160,13 @@ export function MembersPage() {
                 <option value="admin">Admin</option>
                 <option value="scorer">Scorer</option>
                 <option value="viewer">Viewer</option>
-              </select>
+              </Select>
               {canManage && member.role !== 'owner' && (
-                <button
+                <Button
+                  variant="ghost"
+                  size="icon"
                   aria-label={`Xóa ${member.email}`}
-                  className="grid min-h-11 min-w-11 place-items-center rounded-xl text-[var(--danger)] hover:bg-[var(--danger-soft)]"
+                  className="text-[var(--destructive)]"
                   onClick={async () => {
                     if (confirm('Xóa thành viên này?')) {
                       await api.workspaces.removeMember(workspaceId, member.id);
@@ -163,15 +175,15 @@ export function MembersPage() {
                   }}
                 >
                   <Trash2 className="h-4 w-4" />
-                </button>
+                </Button>
               )}
             </article>
           ))}
-        </div>
+        </Card>
       )}
       {roleCanManage && (
         <section className="mt-6">
-          <h2 className="section-title">Lời mời đang quản lý</h2>
+          <h2 className="mb-3 m-0 text-base font-semibold tracking-tight">Lời mời đang quản lý</h2>
           {invitations.isLoading ? (
             <LoadingState rows={1} />
           ) : !invitations.data?.length ? (
@@ -205,20 +217,18 @@ export function MembersPage() {
             invite.mutate();
           }}
         >
-          <div className="field">
-            <label htmlFor="invite-email">Email</label>
-            <input
-              className="input"
+          <Field label="Email" htmlFor="invite-email">
+            <Input
               type="email"
               required
               id="invite-email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
             />
-          </div>
+          </Field>
           <RoleField role={role} setRole={setRole} />
           {invite.error && (
-            <p role="alert" className="field-error">
+            <p role="alert" className="text-sm text-[var(--destructive)]">
               {invite.error.message}
             </p>
           )}
@@ -228,6 +238,7 @@ export function MembersPage() {
     </div>
   );
 }
+
 function RoleField({
   role,
   setRole,
@@ -236,21 +247,20 @@ function RoleField({
   setRole: (role: Exclude<WorkspaceRole, 'owner'>) => void;
 }) {
   return (
-    <div className="field">
-      <label htmlFor="invite-role">Quyền được cấp</label>
-      <select
+    <Field label="Quyền được cấp" htmlFor="invite-role">
+      <Select
         id="invite-role"
-        className="input"
         value={role}
         onChange={(event) => setRole(event.target.value as Exclude<WorkspaceRole, 'owner'>)}
       >
         <option value="admin">Admin</option>
         <option value="scorer">Scorer</option>
         <option value="viewer">Viewer</option>
-      </select>
-    </div>
+      </Select>
+    </Field>
   );
 }
+
 function InviteRow({
   invite,
   canRevoke,
@@ -261,21 +271,23 @@ function InviteRow({
   onRevoke: () => void;
 }) {
   return (
-    <article className="app-card flex flex-wrap items-center gap-3 p-4">
-      <Link2 className="h-5 w-5 text-[var(--primary)]" />
+    <Card className="flex flex-wrap items-center gap-3 p-4">
+      <Link2 className="h-4 w-4 shrink-0 text-[var(--muted-foreground)]" />
       <div className="min-w-0 flex-1">
-        <strong>{invite.kind === 'email' ? invite.email : 'Link chia sẻ'}</strong>
-        <p className="m-0 text-sm muted">
+        <strong className="text-sm font-semibold">
+          {invite.kind === 'email' ? invite.email : 'Link chia sẻ'}
+        </strong>
+        <p className="m-0 text-sm text-[var(--muted-foreground)]">
           {invite.role} · hết hạn {new Date(invite.expiresAt).toLocaleString('vi-VN')} ·{' '}
           {invite.useCount || 0}/{invite.maxUses} lượt
         </p>
       </div>
       <Badge tone={invite.status === 'pending' ? 'success' : 'warning'}>{invite.status}</Badge>
       {canRevoke && invite.status === 'pending' && (
-        <Button variant="ghost" className="text-[var(--danger)]" onClick={onRevoke}>
+        <Button variant="ghost" className="text-[var(--destructive)]" onClick={onRevoke}>
           Thu hồi
         </Button>
       )}
-    </article>
+    </Card>
   );
 }

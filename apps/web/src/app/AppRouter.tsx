@@ -19,6 +19,10 @@ import { WorkspacesPage } from '../features/workspaces/WorkspacesPage';
 import { LoadingState } from '../components/ui/State';
 import { useAuth } from './AuthProvider';
 
+function internalPath(value?: string) {
+  return value?.startsWith('/') && !value.startsWith('//') ? value : undefined;
+}
+
 function Protected() {
   const { user, loading } = useAuth();
   const location = useLocation();
@@ -40,13 +44,21 @@ function SuperAdmin() {
 }
 function Guest() {
   const { user, loading } = useAuth();
+  const location = useLocation();
   if (loading)
     return (
       <main className="page-shell">
         <LoadingState />
       </main>
     );
-  return user ? <Navigate to="/workspaces" replace /> : <Outlet />;
+  return user ? (
+    <Navigate
+      to={internalPath((location.state as { from?: string })?.from) || '/workspaces'}
+      replace
+    />
+  ) : (
+    <Outlet />
+  );
 }
 export function AppRouter() {
   return (
@@ -86,11 +98,11 @@ export function AppRouter() {
 function NotFound() {
   return (
     <main className="page-shell grid min-h-[70dvh] place-items-center text-center">
-      <div>
-        <p className="eyebrow">404</p>
-        <h1 className="page-title">Không tìm thấy trang</h1>
+      <div className="space-y-2">
+        <p className="m-0 text-sm text-[var(--muted-foreground)]">404</p>
+        <h1 className="m-0 text-2xl font-semibold tracking-tight">Không tìm thấy trang</h1>
         <a
-          className="mt-5 inline-flex min-h-11 items-center font-bold text-[var(--primary)]"
+          className="mt-4 inline-flex min-h-11 items-center text-sm font-medium underline-offset-4 hover:underline"
           href="/"
         >
           Về trang chính

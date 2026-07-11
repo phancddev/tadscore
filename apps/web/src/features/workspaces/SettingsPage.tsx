@@ -3,7 +3,12 @@ import { Archive, LockKeyhole, Save } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Button } from '../../components/ui/Button';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
+import { Field } from '../../components/ui/Field';
+import { Input } from '../../components/ui/Input';
+import { PageHeader } from '../../components/ui/PageHeader';
 import { ErrorState, LoadingState } from '../../components/ui/State';
+import { Textarea } from '../../components/ui/Textarea';
 import { useToast } from '../../components/ui/Toast';
 import { api } from '../../lib/api';
 
@@ -44,86 +49,91 @@ export function SettingsPage() {
   const canManage = ['owner', 'admin'].includes(query.data.role);
   return (
     <div className="page-shell max-w-4xl">
-      <header className="mb-7">
-        <p className="eyebrow">Cấu hình</p>
-        <h1 className="page-title mt-2">Cài đặt workspace</h1>
-      </header>
-      <form
-        className="app-card grid gap-4 p-5"
-        onSubmit={(event) => {
-          event.preventDefault();
-          update.mutate({ name, description });
-        }}
-      >
-        <h2 className="section-title m-0">Thông tin chung</h2>
-        <div className="field">
-          <label htmlFor="settings-name">Tên workspace</label>
-          <input
-            className="input"
-            id="settings-name"
-            disabled={!canManage}
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-          />
-        </div>
-        <div className="field">
-          <label htmlFor="settings-description">Mô tả</label>
-          <textarea
-            className="input min-h-24"
-            id="settings-description"
-            disabled={!canManage}
-            value={description}
-            onChange={(event) => setDescription(event.target.value)}
-          />
-        </div>
-        <div className="field">
-          <label>Bộ luật đã khóa phiên bản</label>
-          <div className="rounded-xl bg-[var(--surface-muted)] p-3" aria-readonly="true">
-            {query.data.ruleId} · {query.data.ruleVersion}
-          </div>
-        </div>
-        {update.error && (
-          <p role="alert" className="field-error">
-            {update.error.message}
-          </p>
-        )}
-        {canManage && (
-          <Button className="justify-self-start" loading={update.isPending}>
-            <Save className="h-4 w-4" />
-            Lưu thay đổi
-          </Button>
-        )}
-      </form>
+      <PageHeader title="Cài đặt workspace" />
+      <Card>
+        <CardHeader>
+          <CardTitle>Thông tin chung</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form
+            className="grid gap-4"
+            onSubmit={(event) => {
+              event.preventDefault();
+              update.mutate({ name, description });
+            }}
+          >
+            <Field label="Tên workspace" htmlFor="settings-name">
+              <Input
+                id="settings-name"
+                disabled={!canManage}
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+              />
+            </Field>
+            <Field label="Mô tả" htmlFor="settings-description">
+              <Textarea
+                id="settings-description"
+                disabled={!canManage}
+                value={description}
+                onChange={(event) => setDescription(event.target.value)}
+              />
+            </Field>
+            <Field label="Bộ luật đã khóa phiên bản">
+              <div
+                className="rounded-[var(--radius)] border border-[var(--border)] bg-[var(--muted)]/50 px-3 py-2 text-sm"
+                aria-readonly="true"
+              >
+                {query.data.ruleId} · {query.data.ruleVersion}
+              </div>
+            </Field>
+            {update.error && (
+              <p role="alert" className="text-sm text-[var(--destructive)]">
+                {update.error.message}
+              </p>
+            )}
+            {canManage && (
+              <Button className="justify-self-start" loading={update.isPending}>
+                <Save className="h-4 w-4" />
+                Lưu thay đổi
+              </Button>
+            )}
+          </form>
+        </CardContent>
+      </Card>
       {canManage && (
-        <section className="app-card mt-5 border-red-200 p-5">
-          <h2 className="section-title m-0 text-[var(--danger)]">Trạng thái sự kiện</h2>
-          <p className="text-sm muted">
-            Khóa để ngừng nhập điểm tạm thời; lưu trữ khi sự kiện đã kết thúc.
-          </p>
-          <div className="flex flex-wrap gap-2">
-            <Button
-              variant="secondary"
-              disabled={query.data.status === 'archived' || query.data.status === 'suspended'}
-              onClick={() =>
-                update.mutate({ status: query.data.status === 'locked' ? 'active' : 'locked' })
-              }
-            >
-              <LockKeyhole className="h-4 w-4" />
-              {query.data.status === 'locked' ? 'Mở khóa' : 'Khóa nhập điểm'}
-            </Button>
-            <Button
-              variant="danger"
-              disabled={query.data.status === 'archived' || query.data.status === 'suspended'}
-              onClick={() =>
-                confirm('Lưu trữ workspace này? Dữ liệu sẽ chuyển sang chỉ đọc.') &&
-                update.mutate({ status: 'archived' })
-              }
-            >
-              <Archive className="h-4 w-4" />
-              Lưu trữ
-            </Button>
-          </div>
-        </section>
+        <Card className="mt-5 border-[var(--destructive)]/40">
+          <CardHeader>
+            <CardTitle className="text-[var(--destructive)]">Trạng thái sự kiện</CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-4">
+            <p className="m-0 text-sm text-[var(--muted-foreground)]">
+              Khóa để ngừng nhập điểm tạm thời; lưu trữ khi sự kiện đã kết thúc.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant="secondary"
+                disabled={query.data.status === 'archived' || query.data.status === 'suspended'}
+                onClick={() =>
+                  update.mutate({ status: query.data.status === 'locked' ? 'active' : 'locked' })
+                }
+              >
+                <LockKeyhole className="h-4 w-4" />
+                {query.data.status === 'locked' ? 'Mở khóa' : 'Khóa nhập điểm'}
+              </Button>
+              <Button
+                variant="danger"
+                disabled={query.data.status === 'archived' || query.data.status === 'suspended'}
+                onClick={() =>
+                  confirm('Lưu trữ workspace này? Dữ liệu sẽ chuyển sang chỉ đọc.') &&
+                  update.mutate({ status: 'archived' })
+                }
+              >
+                <Archive className="h-4 w-4" />
+                Lưu trữ
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       )}
     </div>
   );

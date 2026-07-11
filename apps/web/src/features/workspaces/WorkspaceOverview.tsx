@@ -1,7 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
 import { ArrowRight, Gem, Medal, Package, Radio, Users } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
+import { Alert } from '../../components/ui/Alert';
 import { Badge } from '../../components/ui/Badge';
+import { Card, CardContent, CardHeader } from '../../components/ui/Card';
+import { Metric } from '../../components/ui/Metric';
+import { PageHeader } from '../../components/ui/PageHeader';
 import { ErrorState, LoadingState } from '../../components/ui/State';
 import { api } from '../../lib/api';
 
@@ -34,35 +38,32 @@ export function WorkspaceOverview() {
     );
   return (
     <div className="page-shell">
-      <header className="mb-7">
-        <div className="flex flex-wrap items-center gap-3">
-          <p className="eyebrow m-0">{workspace.data?.ruleId}</p>
+      <PageHeader
+        title={workspace.data?.name || ''}
+        description={`${workspace.data?.ruleId} · Phiên bản luật ${workspace.data?.ruleVersion}${
+          workspace.data?.description ? ` · ${workspace.data.description}` : ''
+        }`}
+        actions={
           <Badge tone={workspace.data?.status === 'active' ? 'success' : 'warning'}>
             {workspace.data?.status}
           </Badge>
-        </div>
-        <h1 className="page-title mt-2">{workspace.data?.name}</h1>
-        <p className="mt-2 muted">
-          Phiên bản luật {workspace.data?.ruleVersion}
-          {workspace.data?.description ? ` · ${workspace.data.description}` : ''}
-        </p>
-      </header>
+        }
+      />
       {workspace.data?.status !== 'active' && (
-        <div
-          role="status"
-          className="mb-5 rounded-xl bg-[var(--warning-soft)] p-4 text-[var(--warning)]"
-        >
-          Workspace đang ở trạng thái <strong>{workspace.data?.status}</strong>. Dữ liệu chỉ đọc và
-          thao tác nhập điểm đã tắt.
-        </div>
+        <Alert variant="warning" className="mb-5">
+          <span>
+            Workspace đang ở trạng thái <strong>{workspace.data?.status}</strong>. Dữ liệu chỉ đọc và
+            thao tác nhập điểm đã tắt.
+          </span>
+        </Alert>
       )}
       <section aria-labelledby="teams-title">
         <div className="mb-3 flex items-center justify-between">
-          <h2 id="teams-title" className="section-title">
+          <h2 id="teams-title" className="m-0 text-base font-semibold tracking-tight">
             Tình hình các đội
           </h2>
           <Link
-            className="flex min-h-11 items-center gap-2 text-sm font-bold text-[var(--primary)]"
+            className="flex min-h-11 items-center gap-2 text-sm font-medium text-[var(--foreground)] underline-offset-4 hover:underline"
             to="ranking"
           >
             Xem xếp hạng <ArrowRight className="h-4 w-4" />
@@ -70,63 +71,56 @@ export function WorkspaceOverview() {
         </div>
         <div className="grid-auto">
           {ranking.data?.teams.map((team) => (
-            <article className="app-card overflow-hidden" key={team.teamId}>
-              <div className="h-1.5" style={{ backgroundColor: team.color || 'var(--primary)' }} />
-              <div className="p-5">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-bold muted">Hạng {team.rank}</span>
+            <Card className="overflow-hidden" key={team.teamId}>
+              <div className="h-1" style={{ backgroundColor: team.color || 'var(--primary)' }} />
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-sm font-medium text-[var(--muted-foreground)]">
+                    Hạng {team.rank}
+                  </span>
                   <Badge tone={team.eligible ? 'success' : 'neutral'}>
                     {team.eligible ? 'Đủ điều kiện' : 'Đang tích lũy'}
                   </Badge>
                 </div>
-                <h3 className="my-3 text-2xl font-extrabold">{team.displayName || team.name}</h3>
-                <div className="grid grid-cols-3 gap-2 text-center">
+                <h3 className="m-0 text-xl font-semibold tracking-tight">
+                  {team.displayName || team.name}
+                </h3>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-3 gap-2">
                   <Metric icon={Medal} value={team.medals} label="Huy hiệu" />
                   <Metric icon={Gem} value={team.pieces} label="Mảnh ghép" />
                   <Metric icon={Package} value={team.items} label="Vật phẩm" />
                 </div>
-              </div>
-            </article>
+              </CardContent>
+            </Card>
           ))}
         </div>
       </section>
       <section className="mt-6 grid gap-4 md:grid-cols-2">
-        <Link to="score" className="app-card flex min-h-20 items-center gap-4 p-5">
-          <span className="grid h-12 w-12 place-items-center rounded-xl bg-[var(--primary-soft)] text-[var(--primary)]">
-            <Radio />
-          </span>
-          <div>
-            <h2 className="m-0 font-bold">Nhập điểm trực tiếp</h2>
-            <p className="m-0 text-sm muted">Xếp hạng game và thao tác nhanh</p>
-          </div>
+        <Link to="score" className="block">
+          <Card className="flex min-h-20 items-center gap-4 p-5 transition-colors hover:bg-[var(--muted)]/40">
+            <Radio className="h-5 w-5 shrink-0 text-[var(--muted-foreground)]" />
+            <div>
+              <h2 className="m-0 text-base font-semibold">Nhập điểm trực tiếp</h2>
+              <p className="m-0 text-sm text-[var(--muted-foreground)]">
+                Xếp hạng game và thao tác nhanh
+              </p>
+            </div>
+          </Card>
         </Link>
-        <Link to="members" className="app-card flex min-h-20 items-center gap-4 p-5">
-          <span className="grid h-12 w-12 place-items-center rounded-xl bg-[var(--surface-muted)]">
-            <Users />
-          </span>
-          <div>
-            <h2 className="m-0 font-bold">Quản lý thành viên</h2>
-            <p className="m-0 text-sm muted">Phân quyền và mời cộng tác</p>
-          </div>
+        <Link to="members" className="block">
+          <Card className="flex min-h-20 items-center gap-4 p-5 transition-colors hover:bg-[var(--muted)]/40">
+            <Users className="h-5 w-5 shrink-0 text-[var(--muted-foreground)]" />
+            <div>
+              <h2 className="m-0 text-base font-semibold">Quản lý thành viên</h2>
+              <p className="m-0 text-sm text-[var(--muted-foreground)]">
+                Phân quyền và mời cộng tác
+              </p>
+            </div>
+          </Card>
         </Link>
       </section>
-    </div>
-  );
-}
-function Metric({
-  icon: Icon,
-  value,
-  label,
-}: {
-  icon: typeof Medal;
-  value: number;
-  label: string;
-}) {
-  return (
-    <div className="rounded-xl bg-[var(--surface-muted)] p-3">
-      <Icon className="mx-auto h-4 w-4 text-[var(--primary)]" />
-      <strong className="mt-1 block text-xl tabular">{value}</strong>
-      <span className="text-[11px] font-semibold muted">{label}</span>
     </div>
   );
 }

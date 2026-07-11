@@ -1,12 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Activity, Building2, MailWarning, ScrollText, ShieldCheck, Users } from 'lucide-react';
+import { Activity, Building2, MailWarning, ScrollText, Users } from 'lucide-react';
 import { useState } from 'react';
-import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
+import { PageHeader } from '../../components/ui/PageHeader';
+import { Select } from '../../components/ui/Select';
 import { EmptyState, ErrorState, LoadingState } from '../../components/ui/State';
 import { useToast } from '../../components/ui/Toast';
 import { api } from '../../lib/api';
 import type { GlobalRole, UserStatus } from '../../lib/types';
+import { AdminRow as Row, AdminStatus as Status } from './AdminParts';
 
 type Tab = 'users' | 'workspaces' | 'audit' | 'system' | 'outbox';
 const tabs = [
@@ -16,6 +18,7 @@ const tabs = [
   { id: 'system', label: 'Hệ thống', icon: Activity },
   { id: 'outbox', label: 'Email', icon: MailWarning },
 ] as const;
+
 export function AdminPage() {
   const [tab, setTab] = useState<Tab>('users');
   const client = useQueryClient();
@@ -74,27 +77,35 @@ export function AdminPage() {
   const query = { users, workspaces, audit, system: health, outbox }[tab];
   return (
     <div className="page-shell">
-      <header className="mb-6">
-        <p className="eyebrow">Super admin</p>
-        <h1 className="page-title mt-2">Quản trị platform</h1>
-        <p className="mt-2 muted">
-          Quản lý vai trò hệ thống, trạng thái tài khoản, workspace và vận hành email.
-        </p>
-      </header>
+      <PageHeader
+        title="Quản trị platform"
+        description="Quản lý vai trò hệ thống, trạng thái tài khoản, workspace và vận hành email."
+      />
       <div className="mb-5 overflow-x-auto">
-        <div className="flex w-max gap-2" role="tablist" aria-label="Khu vực quản trị">
-          {tabs.map(({ id, label, icon: Icon }) => (
-            <button
-              role="tab"
-              aria-selected={tab === id}
-              key={id}
-              onClick={() => setTab(id)}
-              className={`flex min-h-11 items-center gap-2 rounded-xl px-4 font-semibold ${tab === id ? 'bg-[var(--primary)] text-white' : 'bg-white'}`}
-            >
-              <Icon className="h-4 w-4" />
-              {label}
-            </button>
-          ))}
+        <div
+          className="flex w-max gap-1 border-b border-[var(--border)]"
+          role="tablist"
+          aria-label="Khu vực quản trị"
+        >
+          {tabs.map(({ id, label, icon: Icon }) => {
+            const selected = tab === id;
+            return (
+              <button
+                role="tab"
+                aria-selected={selected}
+                key={id}
+                onClick={() => setTab(id)}
+                className={`flex min-h-11 items-center gap-2 border-b-2 px-3 text-sm font-medium transition-colors ${
+                  selected
+                    ? 'border-[var(--foreground)] text-[var(--foreground)]'
+                    : 'border-transparent text-[var(--muted-foreground)] hover:text-[var(--foreground)]'
+                }`}
+              >
+                <Icon className="h-4 w-4" aria-hidden />
+                {label}
+              </button>
+            );
+          })}
         </div>
       </div>
       {query.isLoading ? (
@@ -102,7 +113,7 @@ export function AdminPage() {
       ) : query.isError ? (
         <ErrorState retry={() => query.refetch()} />
       ) : (
-        <section className="app-card overflow-hidden">
+        <section className="overflow-hidden rounded-[var(--radius)] border border-[var(--border)] bg-[var(--card)]">
           {tab === 'users' &&
             (!users.data?.length ? (
               <EmptyState
@@ -117,9 +128,9 @@ export function AdminPage() {
                   subtitle={`${user.email} · @${user.username}`}
                   badge={user.emailVerifiedAt ? 'verified' : 'unverified'}
                 >
-                  <select
+                  <Select
                     aria-label={`Vai trò hệ thống của ${user.email}`}
-                    className="input !w-auto"
+                    className="!w-auto"
                     value={user.globalRole}
                     onChange={(event) =>
                       setUser.mutate({
@@ -130,10 +141,10 @@ export function AdminPage() {
                   >
                     <option value="user">user</option>
                     <option value="super_admin">super_admin</option>
-                  </select>
-                  <select
+                  </Select>
+                  <Select
                     aria-label={`Trạng thái của ${user.email}`}
-                    className="input !w-auto"
+                    className="!w-auto"
                     value={user.status}
                     onChange={(event) =>
                       setUser.mutate({
@@ -145,7 +156,7 @@ export function AdminPage() {
                     <option value="pending">pending</option>
                     <option value="active">active</option>
                     <option value="suspended">suspended</option>
-                  </select>
+                  </Select>
                   {!user.emailVerifiedAt && (
                     <Button
                       variant="secondary"
@@ -216,15 +227,17 @@ export function AdminPage() {
                   detail="Giá trị runtime đã loại bỏ secret"
                 />
               </div>
-              <h2 className="section-title mt-6">Rule registry</h2>
-              {rules.data?.map((rule) => (
-                <Row
-                  key={`${rule.id}:${rule.version}`}
-                  title={rule.name || rule.id}
-                  subtitle={`${rule.id} · ${rule.version}`}
-                  badge={rule.ok === false || rule.healthy === false ? 'error' : 'healthy'}
-                />
-              ))}
+              <h2 className="mb-2 mt-6 text-sm font-semibold">Rule registry</h2>
+              <div className="overflow-hidden rounded-[var(--radius)] border border-[var(--border)]">
+                {rules.data?.map((rule) => (
+                  <Row
+                    key={`${rule.id}:${rule.version}`}
+                    title={rule.name || rule.id}
+                    subtitle={`${rule.id} · ${rule.version}`}
+                    badge={rule.ok === false || rule.healthy === false ? 'error' : 'healthy'}
+                  />
+                ))}
+              </div>
             </div>
           )}
           {tab === 'outbox' &&
@@ -258,40 +271,6 @@ export function AdminPage() {
             ))}
         </section>
       )}
-    </div>
-  );
-}
-function Row({
-  title,
-  subtitle,
-  badge,
-  children,
-}: {
-  title: string;
-  subtitle: string;
-  badge: string;
-  children?: React.ReactNode;
-}) {
-  return (
-    <article className="flex flex-wrap items-center gap-3 border-b border-[var(--border)] p-4 last:border-0">
-      <span className="grid h-11 w-11 place-items-center rounded-xl bg-[var(--primary-soft)] text-[var(--primary)]">
-        <ShieldCheck className="h-5 w-5" />
-      </span>
-      <div className="min-w-0 flex-1">
-        <h2 className="m-0 break-words text-base font-bold">{title}</h2>
-        <p className="m-0 break-words text-sm muted">{subtitle}</p>
-      </div>
-      <Badge>{badge}</Badge>
-      {children}
-    </article>
-  );
-}
-function Status({ title, value, detail }: { title: string; value: string; detail: string }) {
-  return (
-    <div className="rounded-xl bg-[var(--surface-muted)] p-4">
-      <Badge tone={value === 'healthy' ? 'success' : 'warning'}>{value}</Badge>
-      <h2 className="mb-0 mt-3 font-bold">{title}</h2>
-      <p className="m-0 text-sm muted">{detail}</p>
     </div>
   );
 }

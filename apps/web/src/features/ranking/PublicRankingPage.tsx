@@ -82,19 +82,25 @@ export function PublicRankingPage() {
       >
         <div>
           {!presenter && <Brand />}
-          <p className={`eyebrow ${presenter ? 'text-base' : 'mt-5'}`}>
-            {query.data.rule.id} · {query.data.rule.version}
-          </p>
           <h1
-            className={`m-0 mt-1 font-extrabold tracking-[-.04em] ${presenter ? 'text-4xl md:text-6xl' : 'text-3xl md:text-5xl'}`}
+            className={`m-0 font-semibold tracking-tight ${presenter ? 'mt-0 text-4xl md:text-6xl' : 'mt-5 text-2xl md:text-3xl'}`}
           >
             {query.data.workspace.name}
           </h1>
-          <p className="m-0 mt-2 flex items-center gap-2 text-sm muted">
+          <p
+            className={`m-0 mt-2 flex items-center gap-2 text-[var(--muted-foreground)] ${presenter ? 'text-base' : 'text-sm'}`}
+          >
             <Radio
-              className={`h-4 w-4 ${connected ? 'text-[var(--success)]' : 'text-[var(--danger)]'}`}
+              className={`h-4 w-4 ${connected ? 'text-[var(--success)]' : 'text-[var(--destructive)]'}`}
+              aria-hidden
             />
             {connected ? 'Đang cập nhật trực tiếp' : 'Đang kết nối lại'}
+            <span className="text-[var(--border)]" aria-hidden>
+              ·
+            </span>
+            <span>
+              {query.data.rule.id} · {query.data.rule.version}
+            </span>
           </p>
         </div>
         <div className="no-print flex flex-wrap gap-2">
@@ -144,7 +150,7 @@ export function PublicRankingPage() {
       <Modal open={qr} onClose={() => setQr(false)} title="Chia sẻ bảng xếp hạng">
         <div className="grid place-items-center gap-4 text-center">
           <QRCodeSVG value={location.href} size={220} level="M" />
-          <p className="m-0 break-all text-sm muted">{location.href}</p>
+          <p className="m-0 break-all text-sm text-[var(--muted-foreground)]">{location.href}</p>
           <Button variant="secondary" onClick={() => navigator.clipboard.writeText(location.href)}>
             Sao chép liên kết
           </Button>

@@ -2,7 +2,10 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router-dom';
 import { z } from 'zod';
+import { Alert } from '../../components/ui/Alert';
 import { Button } from '../../components/ui/Button';
+import { Field } from '../../components/ui/Field';
+import { Input } from '../../components/ui/Input';
 import { api } from '../../lib/api';
 import { AuthShell } from './AuthShell';
 
@@ -41,22 +44,15 @@ export function RegisterPage() {
     }
   });
   const field = (name: keyof FormData, label: string, type = 'text', autoComplete?: string) => (
-    <div className="field">
-      <label htmlFor={name}>{label}</label>
-      <input
-        className="input"
+    <Field label={label} htmlFor={name} error={form.formState.errors[name]?.message}>
+      <Input
         id={name}
         type={type}
         autoComplete={autoComplete}
         aria-invalid={!!form.formState.errors[name]}
         {...form.register(name)}
       />
-      {form.formState.errors[name] && (
-        <span role="alert" className="field-error">
-          {form.formState.errors[name]?.message}
-        </span>
-      )}
-    </div>
+    </Field>
   );
   return (
     <AuthShell title="Tạo tài khoản" subtitle="Bắt đầu một không gian chấm điểm mới.">
@@ -67,16 +63,17 @@ export function RegisterPage() {
         {field('password', 'Mật khẩu', 'password', 'new-password')}
         {field('confirm', 'Nhập lại mật khẩu', 'password', 'new-password')}
         {form.formState.errors.root && (
-          <p role="alert" className="field-error">
-            {form.formState.errors.root.message}
-          </p>
+          <Alert variant="destructive">{form.formState.errors.root.message}</Alert>
         )}
         <Button type="submit" loading={form.formState.isSubmitting}>
           Tạo tài khoản
         </Button>
-        <p className="text-center text-sm muted">
+        <p className="text-center text-sm text-[var(--muted-foreground)]">
           Đã có tài khoản?{' '}
-          <Link className="font-bold text-[var(--primary)]" to="/login">
+          <Link
+            className="font-medium text-[var(--foreground)] underline-offset-4 hover:underline"
+            to="/login"
+          >
             Đăng nhập
           </Link>
         </p>

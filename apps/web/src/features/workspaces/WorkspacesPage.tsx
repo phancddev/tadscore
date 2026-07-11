@@ -1,11 +1,17 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowRight, CalendarDays, Plus, Users } from 'lucide-react';
+import { ArrowRight, Plus, Users } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../../components/ui/Card';
+import { Field } from '../../components/ui/Field';
+import { Input } from '../../components/ui/Input';
 import { Modal } from '../../components/ui/Modal';
+import { PageHeader } from '../../components/ui/PageHeader';
+import { Select } from '../../components/ui/Select';
 import { EmptyState, ErrorState, LoadingState } from '../../components/ui/State';
+import { Textarea } from '../../components/ui/Textarea';
 import { api } from '../../lib/api';
 
 const slugify = (value: string) =>
@@ -16,6 +22,7 @@ const slugify = (value: string) =>
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/(^-|-$)/g, '')
     .slice(0, 80);
+
 export function WorkspacesPage() {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
@@ -44,19 +51,19 @@ export function WorkspacesPage() {
       navigate(`/workspaces/${workspace.id}`);
     },
   });
+
   return (
     <div className="page-shell">
-      <header className="mb-7 flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p className="eyebrow">Điều hành sự kiện</p>
-          <h1 className="page-title mt-2">Không gian làm việc</h1>
-          <p className="mt-2 muted">Mỗi workspace giữ riêng bộ luật, thành viên và lịch sử điểm.</p>
-        </div>
-        <Button onClick={() => setOpen(true)}>
-          <Plus className="h-4 w-4" />
-          Tạo workspace
-        </Button>
-      </header>
+      <PageHeader
+        title="Không gian làm việc"
+        description="Mỗi workspace giữ riêng bộ luật, thành viên và lịch sử điểm."
+        actions={
+          <Button onClick={() => setOpen(true)}>
+            <Plus className="h-4 w-4" />
+            Tạo workspace
+          </Button>
+        }
+      />
       {workspaces.isLoading ? (
         <LoadingState />
       ) : workspaces.isError ? (
@@ -69,28 +76,27 @@ export function WorkspacesPage() {
       ) : (
         <div className="grid-auto">
           {workspaces.data.map((item) => (
-            <Link
-              key={item.id}
-              to={`/workspaces/${item.id}`}
-              className="app-card group p-5 transition hover:shadow-md"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <span className="grid h-11 w-11 place-items-center rounded-xl bg-[var(--primary-soft)] text-[var(--primary)]">
-                  <CalendarDays />
-                </span>
-                <Badge tone={item.status === 'active' ? 'success' : 'warning'}>{item.status}</Badge>
-              </div>
-              <h2 className="mb-1 mt-5 text-xl font-bold">{item.name}</h2>
-              <p className="m-0 text-sm muted">
-                {item.ruleId} · {item.ruleVersion}
-              </p>
-              <div className="mt-5 flex items-center justify-between border-t border-[var(--border)] pt-4 text-sm">
-                <span className="flex items-center gap-2 muted">
-                  <Users className="h-4 w-4" />
-                  {item.memberCount ?? '—'} thành viên
-                </span>
-                <ArrowRight className="h-5 w-5 text-[var(--primary)]" />
-              </div>
+            <Link key={item.id} to={`/workspaces/${item.id}`} className="group block">
+              <Card className="h-full transition-colors hover:bg-[var(--muted)]/40">
+                <CardHeader className="flex-row items-start justify-between gap-3 space-y-0">
+                  <CardTitle className="text-lg">{item.name}</CardTitle>
+                  <Badge tone={item.status === 'active' ? 'success' : 'warning'}>
+                    {item.status}
+                  </Badge>
+                </CardHeader>
+                <CardContent>
+                  <p className="m-0 text-sm text-[var(--muted-foreground)]">
+                    {item.ruleId} · {item.ruleVersion}
+                  </p>
+                </CardContent>
+                <CardFooter className="justify-between border-t border-[var(--border)] pt-4 text-sm">
+                  <span className="flex items-center gap-2 text-[var(--muted-foreground)]">
+                    <Users className="h-4 w-4" />
+                    {item.memberCount ?? '—'} thành viên
+                  </span>
+                  <ArrowRight className="h-4 w-4 text-[var(--muted-foreground)] transition-transform group-hover:translate-x-0.5" />
+                </CardFooter>
+              </Card>
             </Link>
           ))}
         </div>
@@ -103,11 +109,9 @@ export function WorkspacesPage() {
             create.mutate();
           }}
         >
-          <div className="field">
-            <label htmlFor="workspace-name">Tên workspace</label>
-            <input
+          <Field label="Tên workspace" htmlFor="workspace-name">
+            <Input
               id="workspace-name"
-              className="input"
               required
               value={name}
               onChange={(event) => {
@@ -116,33 +120,30 @@ export function WorkspacesPage() {
               }}
               placeholder="Trại hè 2026"
             />
-          </div>
-          <div className="field">
-            <label htmlFor="slug">Slug</label>
-            <input
+          </Field>
+          <Field
+            label="Slug"
+            htmlFor="slug"
+            hint="Dùng để nhận diện ngắn gọn, không chứa dấu."
+          >
+            <Input
               id="slug"
-              className="input"
               required
               pattern="[a-z0-9][a-z0-9-]{2,79}"
               value={slug}
               onChange={(event) => setSlug(slugify(event.target.value))}
             />
-            <span className="text-xs muted">Dùng để nhận diện ngắn gọn, không chứa dấu.</span>
-          </div>
-          <div className="field">
-            <label htmlFor="description">Mô tả</label>
-            <textarea
+          </Field>
+          <Field label="Mô tả" htmlFor="description">
+            <Textarea
               id="description"
-              className="input min-h-24"
               value={description}
               onChange={(event) => setDescription(event.target.value)}
             />
-          </div>
-          <div className="field">
-            <label htmlFor="rule">Bộ luật</label>
-            <select
+          </Field>
+          <Field label="Bộ luật" htmlFor="rule">
+            <Select
               id="rule"
-              className="input"
               required
               value={rule}
               onChange={(event) => setRule(event.target.value)}
@@ -153,10 +154,10 @@ export function WorkspacesPage() {
                   {item.name} · {item.version}
                 </option>
               ))}
-            </select>
-          </div>
+            </Select>
+          </Field>
           {create.error && (
-            <p role="alert" className="field-error">
+            <p role="alert" className="text-sm text-[var(--destructive)]">
               {create.error.message}
             </p>
           )}

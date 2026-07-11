@@ -14,9 +14,9 @@ export function WorkspaceLayout() {
   ] as const;
   return (
     <div>
-      <div className="no-print overflow-x-auto border-b border-[var(--border)] bg-white">
+      <div className="no-print overflow-x-auto border-b border-[var(--border)] bg-[var(--card)]">
         <nav
-          className="mx-auto flex w-max min-w-full max-w-[1440px] gap-1 px-3 py-2"
+          className="mx-auto flex w-max min-w-full max-w-[1280px] gap-1 px-3"
           aria-label="Không gian làm việc"
         >
           {tabs.map(([path, label, Icon]) => (
@@ -26,10 +26,10 @@ export function WorkspaceLayout() {
               to={`/workspaces/${workspaceId}/${path}`}
               className={({ isActive }) =>
                 cn(
-                  'flex min-h-11 shrink-0 items-center gap-2 rounded-xl px-3 text-sm font-semibold',
+                  'flex min-h-11 shrink-0 items-center gap-2 border-b-2 px-3 text-sm font-medium transition-colors',
                   isActive
-                    ? 'bg-[var(--primary-soft)] text-[var(--primary)]'
-                    : 'text-[var(--muted)] hover:bg-[var(--surface-muted)]',
+                    ? 'border-[var(--foreground)] text-[var(--foreground)]'
+                    : 'border-transparent text-[var(--muted-foreground)] hover:text-[var(--foreground)]',
                 )
               }
             >

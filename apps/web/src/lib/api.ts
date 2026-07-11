@@ -43,13 +43,14 @@ function normalize(value: unknown): unknown {
   );
 }
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const hasJsonBody = init.body !== undefined && !(init.body instanceof FormData);
   const response = await fetch(`${API_BASE}${path}`, {
     credentials: 'include',
     ...init,
     headers:
       init.body instanceof FormData
         ? init.headers
-        : { 'Content-Type': 'application/json', ...init.headers },
+        : { ...(hasJsonBody ? { 'Content-Type': 'application/json' } : {}), ...init.headers },
   });
   const payload = normalize(await response.json().catch(() => ({}))) as {
     data?: unknown;

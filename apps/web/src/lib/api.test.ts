@@ -56,4 +56,17 @@ describe('API adapter', () => {
       message: 'Không có quyền',
     });
   });
+
+  it('does not send an empty JSON body for bodyless POST requests', async () => {
+    respond({ loggedOut: true });
+    await api.auth.logout();
+    expect(fetch).toHaveBeenCalledWith(
+      '/api/auth/logout',
+      expect.objectContaining({
+        body: undefined,
+        headers: {},
+        method: 'POST',
+      }),
+    );
+  });
 });

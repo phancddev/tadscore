@@ -2,8 +2,11 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Copy, ExternalLink, Link2Off, RefreshCcw } from 'lucide-react';
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { Alert } from '../../components/ui/Alert';
 import { Button } from '../../components/ui/Button';
+import { Card } from '../../components/ui/Card';
 import { Modal } from '../../components/ui/Modal';
+import { PageHeader } from '../../components/ui/PageHeader';
 import { EmptyState, ErrorState, LoadingState } from '../../components/ui/State';
 import { useToast } from '../../components/ui/Toast';
 import { api } from '../../lib/api';
@@ -59,30 +62,26 @@ export function InternalRankingPage() {
   const canManage = roleCanManage && workspace.data?.status === 'active';
   return (
     <div className="page-shell">
-      <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p className="eyebrow">Xếp hạng nội bộ</p>
-          <h1 className="page-title mt-2">Bảng xếp hạng</h1>
-          <p className="mt-2 muted">Chọn một đội để xem chi tiết các giao dịch điểm.</p>
-        </div>
-        {canManage && (
-          <Button loading={create.isPending} onClick={() => create.mutate()}>
-            Tạo link public
-          </Button>
-        )}
-      </header>
+      <PageHeader
+        title="Bảng xếp hạng"
+        description="Chọn một đội để xem chi tiết các giao dịch điểm."
+        actions={
+          canManage ? (
+            <Button loading={create.isPending} onClick={() => create.mutate()}>
+              Tạo link public
+            </Button>
+          ) : undefined
+        }
+      />
       {roleCanManage && !canManage && (
-        <div
-          role="status"
-          className="mb-5 rounded-xl bg-[var(--warning-soft)] p-4 text-[var(--warning)]"
-        >
+        <Alert variant="warning" className="mb-5" role="status">
           Workspace đang {workspace.data?.status}; link public hiện chỉ đọc và không thể tạo mới.
-        </div>
+        </Alert>
       )}
       <Leaderboard ranking={ranking.data} onTeam={setTeam} />
       {roleCanManage && (
-        <section className="mt-7">
-          <h2 className="section-title">Link public</h2>
+        <section className="mt-8">
+          <h2 className="mb-3 text-sm font-semibold">Link public</h2>
           {links.isLoading ? (
             <LoadingState rows={1} />
           ) : !links.data?.length ? (
@@ -125,6 +124,7 @@ export function InternalRankingPage() {
     </div>
   );
 }
+
 function PublicLinkRow({
   link,
   token,
@@ -143,10 +143,10 @@ function PublicLinkRow({
   const toast = useToast();
   const url = token ? `${location.origin}/ranking/${token}` : '';
   return (
-    <article className="app-card flex flex-wrap items-center gap-3 p-4">
+    <Card className="flex flex-wrap items-center gap-3 p-4">
       <div className="min-w-0 flex-1">
-        <strong>{link.label || 'Bảng xếp hạng'}</strong>
-        <p className="m-0 text-sm muted">
+        <p className="m-0 text-sm font-medium">{link.label || 'Bảng xếp hạng'}</p>
+        <p className="m-0 mt-0.5 text-sm text-[var(--muted-foreground)]">
           {link.isEnabled ? 'Đang hoạt động' : 'Đã thu hồi'}
           {link.expiresAt
             ? ` · hết hạn ${new Date(link.expiresAt).toLocaleString('vi-VN')}`
@@ -166,7 +166,7 @@ function PublicLinkRow({
             Sao chép
           </Button>
           <a
-            className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-[var(--border)] px-4 font-bold"
+            className="inline-flex min-h-11 items-center gap-2 rounded-[var(--radius)] border border-[var(--border)] px-4 text-sm font-medium hover:bg-[var(--muted)]"
             href={url}
             target="_blank"
             rel="noreferrer"
@@ -192,7 +192,7 @@ function PublicLinkRow({
       {!readOnly && link.isEnabled && (
         <Button
           variant="ghost"
-          className="text-[var(--danger)]"
+          className="text-[var(--destructive)]"
           onClick={async () => {
             if (confirm('Thu hồi link public này?')) {
               await api.workspaces.revokePublicLink(workspaceId, link.id);
@@ -204,6 +204,6 @@ function PublicLinkRow({
           Thu hồi
         </Button>
       )}
-    </article>
+    </Card>
   );
 }

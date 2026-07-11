@@ -1,7 +1,11 @@
 import { CheckCircle2, Mail } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
+import { Alert } from '../../components/ui/Alert';
 import { Button } from '../../components/ui/Button';
+import { Card, CardContent } from '../../components/ui/Card';
+import { Field } from '../../components/ui/Field';
+import { Input } from '../../components/ui/Input';
 import { api } from '../../lib/api';
 import { AuthShell } from './AuthShell';
 
@@ -54,10 +58,10 @@ export function VerifyPage() {
     return (
       <AuthShell title="Email đã xác minh" subtitle="Tài khoản của bạn đã sẵn sàng.">
         <div className="grid place-items-center gap-5 text-center">
-          <CheckCircle2 className="h-14 w-14 text-[var(--success)]" />
+          <CheckCircle2 className="h-12 w-12 text-[var(--success)]" />
           <Link
             to="/login"
-            className="inline-flex min-h-11 items-center rounded-xl bg-[var(--primary)] px-5 font-bold text-white"
+            className="inline-flex min-h-11 w-full items-center justify-center rounded-[var(--radius)] bg-[var(--primary)] px-4 text-sm font-medium text-[var(--primary-foreground)]"
           >
             Đăng nhập
           </Link>
@@ -75,27 +79,28 @@ export function VerifyPage() {
     >
       {mode === 'otp' ? (
         <div className="grid gap-5">
-          <div className="field">
-            <label htmlFor="otp">Mã xác minh</label>
-            <input
+          <Field label="Mã xác minh" htmlFor="otp">
+            <Input
               id="otp"
-              className="input text-center text-2xl tracking-[.35em] tabular"
+              className="text-center text-2xl tracking-[.35em] tabular"
               inputMode="numeric"
               autoComplete="one-time-code"
               maxLength={6}
               value={code}
               onChange={(event) => setCode(event.target.value.replace(/\D/g, ''))}
             />
-          </div>
+          </Field>
           <Button onClick={verify} loading={state === 'loading'} disabled={code.length !== 6}>
             <Mail className="h-4 w-4" />
             Xác minh
           </Button>
         </div>
       ) : (
-        <div className="app-card p-4 text-sm muted">
-          Liên kết xác minh có thời hạn và chỉ dùng được một lần.
-        </div>
+        <Card>
+          <CardContent className="pt-5 text-sm text-[var(--muted-foreground)]">
+            Liên kết xác minh có thời hạn và chỉ dùng được một lần.
+          </CardContent>
+        </Card>
       )}
       {!token && (
         <Button className="mt-3 w-full" variant="ghost" onClick={resend} disabled={countdown > 0}>
@@ -105,12 +110,13 @@ export function VerifyPage() {
         </Button>
       )}
       {message && (
-        <p
-          role="status"
-          className={`mt-4 rounded-xl p-3 text-sm ${state === 'error' ? 'bg-[var(--danger-soft)] text-[var(--danger)]' : 'bg-[var(--primary-soft)]'}`}
+        <Alert
+          className="mt-4"
+          variant={state === 'error' ? 'destructive' : 'default'}
+          role={state === 'error' ? 'alert' : 'status'}
         >
           {message}
-        </p>
+        </Alert>
       )}
     </AuthShell>
   );

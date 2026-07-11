@@ -1,6 +1,10 @@
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
+import { Alert } from '../../components/ui/Alert';
 import { Button } from '../../components/ui/Button';
+import { Card, CardContent } from '../../components/ui/Card';
+import { Field } from '../../components/ui/Field';
+import { Input } from '../../components/ui/Input';
 import { api } from '../../lib/api';
 import { AuthShell } from './AuthShell';
 
@@ -25,37 +29,38 @@ export function ForgotPage() {
   return (
     <AuthShell title="Quên mật khẩu" subtitle="Hướng dẫn sẽ được gửi nếu email tồn tại.">
       {sent ? (
-        <div className="app-card grid gap-4 p-5">
-          <p className="m-0">Kiểm tra email để lấy mã hoặc mở liên kết đặt lại mật khẩu.</p>
-          <Link
-            className="inline-flex min-h-11 items-center font-bold text-[var(--primary)]"
-            to={`/reset-password?email=${encodeURIComponent(email)}`}
-          >
-            Nhập mã đặt lại
-          </Link>
-          <Link className="font-bold text-[var(--primary)]" to="/login">
-            Về đăng nhập
-          </Link>
-        </div>
+        <Card>
+          <CardContent className="grid gap-4 pt-5">
+            <p className="m-0 text-sm">
+              Kiểm tra email để lấy mã hoặc mở liên kết đặt lại mật khẩu.
+            </p>
+            <Link
+              className="inline-flex min-h-11 items-center text-sm font-medium underline-offset-4 hover:underline"
+              to={`/reset-password?email=${encodeURIComponent(email)}`}
+            >
+              Nhập mã đặt lại
+            </Link>
+            <Link
+              className="text-sm font-medium underline-offset-4 hover:underline"
+              to="/login"
+            >
+              Về đăng nhập
+            </Link>
+          </CardContent>
+        </Card>
       ) : (
         <form onSubmit={submit} className="grid gap-5">
-          <div className="field">
-            <label htmlFor="email">Email</label>
-            <input
+          <Field label="Email" htmlFor="email">
+            <Input
               required
               type="email"
               id="email"
               autoComplete="email"
-              className="input"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
             />
-          </div>
-          {error && (
-            <p role="alert" className="field-error">
-              {error}
-            </p>
-          )}
+          </Field>
+          {error && <Alert variant="destructive">{error}</Alert>}
           <Button loading={loading}>Gửi hướng dẫn</Button>
         </form>
       )}
@@ -87,59 +92,57 @@ export function ResetPage() {
   return (
     <AuthShell title="Đặt mật khẩu mới" subtitle="Mật khẩu phải có ít nhất 10 ký tự.">
       {done ? (
-        <div className="app-card p-5">
-          <p>Mật khẩu đã được thay đổi. Tất cả phiên cũ đã bị đăng xuất.</p>
-          <Link to="/login" className="font-bold text-[var(--primary)]">
-            Đăng nhập
-          </Link>
-        </div>
+        <Card>
+          <CardContent className="grid gap-4 pt-5">
+            <p className="m-0 text-sm">
+              Mật khẩu đã được thay đổi. Tất cả phiên cũ đã bị đăng xuất.
+            </p>
+            <Link
+              to="/login"
+              className="text-sm font-medium underline-offset-4 hover:underline"
+            >
+              Đăng nhập
+            </Link>
+          </CardContent>
+        </Card>
       ) : (
         <form onSubmit={submit} className="grid gap-5">
           {!token && (
             <>
-              <div className="field">
-                <label htmlFor="reset-email">Email</label>
-                <input
+              <Field label="Email" htmlFor="reset-email">
+                <Input
                   id="reset-email"
-                  className="input"
                   type="email"
                   required
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
                 />
-              </div>
-              <div className="field">
-                <label htmlFor="reset-code">Mã 6 chữ số</label>
-                <input
+              </Field>
+              <Field label="Mã 6 chữ số" htmlFor="reset-code">
+                <Input
                   id="reset-code"
-                  className="input text-center tracking-[.3em]"
+                  className="text-center tracking-[.3em]"
                   inputMode="numeric"
                   maxLength={6}
                   required
                   value={code}
                   onChange={(event) => setCode(event.target.value.replace(/\D/g, ''))}
                 />
-              </div>
+              </Field>
             </>
           )}
-          <div className="field">
-            <label htmlFor="new-password">Mật khẩu mới</label>
-            <input
+          <Field label="Mật khẩu mới" htmlFor="new-password">
+            <Input
               minLength={10}
               required
               type="password"
               autoComplete="new-password"
               id="new-password"
-              className="input"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
             />
-          </div>
-          {error && (
-            <p role="alert" className="field-error">
-              {error}
-            </p>
-          )}
+          </Field>
+          {error && <Alert variant="destructive">{error}</Alert>}
           <Button loading={loading}>Đổi mật khẩu</Button>
         </form>
       )}

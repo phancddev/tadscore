@@ -2,6 +2,9 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Cloud, CloudOff, LockKeyhole } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { Alert } from '../../components/ui/Alert';
+import { Badge } from '../../components/ui/Badge';
+import { PageHeader } from '../../components/ui/PageHeader';
 import { ErrorState, LoadingState } from '../../components/ui/State';
 import { useToast } from '../../components/ui/Toast';
 import { api } from '../../lib/api';
@@ -104,37 +107,40 @@ export function ScorePage() {
       : 'Bạn chỉ có quyền xem workspace này.';
   return (
     <div className="page-shell">
-      <header className="mb-6 flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <p className="eyebrow">Event console</p>
-          <h1 className="page-title mt-2">Nhập điểm</h1>
-          <p className="mt-2 muted">Thiết kế cho thao tác nhanh trên điện thoại và máy tính.</p>
-        </div>
-        <div
-          className={`flex min-h-11 items-center gap-2 rounded-full px-3 text-sm font-semibold ${online ? 'bg-[var(--primary-soft)] text-[var(--success)]' : 'bg-[var(--danger-soft)] text-[var(--danger)]'}`}
-        >
-          {online ? <Cloud className="h-4 w-4" /> : <CloudOff className="h-4 w-4" />}
-          {online
-            ? `Đã kết nối · ${updated.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`
-            : 'Mất kết nối'}
-        </div>
-      </header>
+      <PageHeader
+        title="Nhập điểm"
+        description="Thiết kế cho thao tác nhanh trên điện thoại và máy tính."
+        actions={
+          <Badge tone={online ? 'outline' : 'danger'} className="gap-1.5 font-normal">
+            {online ? (
+              <Cloud className="h-3.5 w-3.5 text-[var(--muted-foreground)]" aria-hidden />
+            ) : (
+              <CloudOff className="h-3.5 w-3.5" aria-hidden />
+            )}
+            <span className={online ? 'text-[var(--muted-foreground)]' : undefined}>
+              {online
+                ? `Đã kết nối · ${updated.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`
+                : 'Mất kết nối'}
+            </span>
+          </Badge>
+        }
+      />
       {!canScore && (
-        <div
-          role="status"
-          className="mb-5 flex items-start gap-3 rounded-xl bg-[var(--warning-soft)] p-4 text-[var(--warning)]"
-        >
-          <LockKeyhole className="mt-0.5 h-5 w-5 shrink-0" />
+        <Alert variant="warning" className="mb-5" role="status">
+          <LockKeyhole className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
           <span>{disabledReason}</span>
-        </div>
+        </Alert>
+      )}
+      {!online && (
+        <Alert variant="destructive" className="mb-5">
+          <CloudOff className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+          <span>Mất kết nối mạng. Các thao tác chấm điểm tạm thời bị tắt.</span>
+        </Alert>
       )}
       {(game.error || quick.error || purchase.error) && (
-        <div
-          role="alert"
-          className="mb-4 rounded-xl bg-[var(--danger-soft)] p-4 text-sm text-[var(--danger)]"
-        >
+        <Alert variant="destructive" className="mb-4">
           {(game.error || quick.error || purchase.error)?.message}
-        </div>
+        </Alert>
       )}
       <div className="grid gap-5 xl:grid-cols-[1.25fr_.75fr]">
         <RankEntry

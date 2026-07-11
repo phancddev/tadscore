@@ -2,31 +2,47 @@ import type { ButtonHTMLAttributes } from 'react';
 import { LoaderCircle } from 'lucide-react';
 import { cn } from '../../lib/cn';
 
+const variants = {
+  primary:
+    'bg-[var(--primary)] text-[var(--primary-foreground)] hover:bg-[var(--primary-hover)]',
+  secondary:
+    'border border-[var(--border)] bg-[var(--card)] text-[var(--foreground)] hover:bg-[var(--muted)]',
+  outline:
+    'border border-[var(--border)] bg-transparent text-[var(--foreground)] hover:bg-[var(--muted)]',
+  ghost: 'bg-transparent text-[var(--foreground)] hover:bg-[var(--muted)]',
+  danger:
+    'bg-[var(--destructive)] text-[var(--destructive-foreground)] hover:brightness-95',
+  link: 'bg-transparent p-0 text-[var(--foreground)] underline-offset-4 hover:underline',
+} as const;
+
+const sizes = {
+  default: 'min-h-11 px-4 py-2',
+  sm: 'min-h-9 px-3 text-sm',
+  lg: 'min-h-12 px-6',
+  icon: 'h-11 w-11 p-0',
+} as const;
+
 type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
+  variant?: keyof typeof variants;
+  size?: keyof typeof sizes;
   loading?: boolean;
 };
 
 export function Button({
   className,
   variant = 'primary',
+  size = 'default',
   loading,
   children,
   disabled,
   ...props
 }: Props) {
-  const variants = {
-    primary: 'bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)]',
-    secondary:
-      'border border-[var(--border)] bg-white text-[var(--foreground)] hover:bg-[var(--surface-muted)]',
-    ghost: 'bg-transparent text-[var(--foreground)] hover:bg-[var(--surface-muted)]',
-    danger: 'bg-[var(--danger)] text-white hover:brightness-90',
-  };
   return (
     <button
       className={cn(
-        'inline-flex min-h-11 items-center justify-center gap-2 rounded-[.7rem] px-4 py-2 font-semibold transition active:scale-[.98] disabled:opacity-50',
+        'inline-flex items-center justify-center gap-2 rounded-[var(--radius)] text-sm font-medium transition-colors disabled:pointer-events-none disabled:opacity-50',
         variants[variant],
+        sizes[size],
         className,
       )}
       disabled={disabled || loading}
