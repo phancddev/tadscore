@@ -129,7 +129,8 @@ make docker-api-integration
 ```
 
 These commands build a pinned Docker runner and do not require host Node/pnpm. `make
-docker-playwright` runs the Playwright container against an already running stack. CI runs
-formatting, linting, tests, builds, line-limit validation, Compose configuration validation, and API
-integration with throwaway database resources. Browser/API suites create isolated accounts and
+docker-playwright` runs the Playwright container against an already running stack. CI
+(`.github/workflows/ci.yml`) runs formatting, line limits, en/vi i18n key parity, lint, unit tests,
+builds, Compose configuration validation, and a separate **API integration** job via
+`make docker-api-integration` (throwaway Postgres). Browser/API suites create isolated accounts and
 workspaces; no fixture account is supplied through environment configuration.

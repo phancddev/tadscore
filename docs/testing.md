@@ -15,14 +15,27 @@ make docker-lint
 make docker-test
 make docker-build
 make docker-check
+make docker-api-integration
 ```
 
 The runner is built from `docker/test.Dockerfile` using pinned Node, pnpm, and Playwright images.
 It excludes host `dist` output and builds shared workspace packages before API tests, so the result
 does not depend on stale host artifacts. Host `npx -y pnpm@10.13.1 ...` remains useful for local
 development, but it is optional and not the documented verification path. `lint` includes
-line-limit and migration-layout checks. Files above 200 lines warn; files above 300 lines fail
-unless excluded as generated or vendor-style artifacts.
+line-limit, migration-layout, and en/vi i18n key-parity checks. Files above 200 lines warn; files
+above 300 lines fail unless excluded as generated or vendor-style artifacts.
+
+### GitHub Actions CI
+
+`.github/workflows/ci.yml` runs two jobs on every PR and push to `main`:
+
+| Job               | Checks                                                                                        |
+| ----------------- | --------------------------------------------------------------------------------------------- |
+| `validate`        | `lines:check`, `i18n:check`, Prettier, `lint`, unit tests, `build` (tsc/vite), Compose config |
+| `api-integration` | `make docker-api-integration` (throwaway Postgres, migrate up/down/up, API suite)             |
+
+Unit `pnpm test` still skips API integration unless `TADSCORE_INTEGRATION=1` and `DATABASE_URL` are
+set; the dedicated CI job is what enforces that suite on every PR.
 
 ## API integration
 

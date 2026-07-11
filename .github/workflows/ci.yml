@@ -23,6 +23,7 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm lines:check
+      - run: pnpm i18n:check
       - run: pnpm format:check
       - run: pnpm lint
       - run: pnpm test
@@ -31,3 +32,11 @@ jobs:
         run: |
           cp .env.example .env
           docker compose config --quiet
+
+  api-integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: API integration (throwaway Postgres + migrations)
+        run: make docker-api-integration
