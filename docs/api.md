@@ -47,6 +47,8 @@ tuân theo contract/runtime config hiện hành.
 | Xem invitation theo token  | Public có token        |
 | Accept invitation          | Authenticated có token |
 
+`GET .../members` chỉ trả member `status=active`. Gỡ member là soft-delete (`status=removed`);
+người đó mất quyền workspace ngay và không còn hiện trong list. Owner không thể bị đổi role/gỡ.
 Invitation email chỉ dành cho đúng email; share link có `maxUses`, expiry và role. Không dùng link
 share vĩnh viễn cho quyền edit. Owner không được cấp qua invitation.
 

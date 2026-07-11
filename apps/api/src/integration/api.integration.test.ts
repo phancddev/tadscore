@@ -125,6 +125,27 @@ describeIf.sequential('API integration', () => {
     ).toBe(204);
     teams = (await request('GET', teamPath, undefined, viewerCookie)).json().data;
     expect(teams).toHaveLength(4);
+
+    const membersPath = `/api/workspaces/${workspaceId}/members`;
+    const membersBefore = (await request('GET', membersPath, undefined, ownerCookie)).json()
+      .data as Array<{ id: string; email: string; role: string; status: string }>;
+    expect(membersBefore.some((m) => m.email === outsider.email)).toBe(true);
+    const outsiderMember = membersBefore.find((m) => m.email === outsider.email)!;
+    expect(
+      (await request('DELETE', `${membersPath}/${outsiderMember.id}`, undefined, ownerCookie))
+        .statusCode,
+    ).toBe(204);
+    const membersAfter = (await request('GET', membersPath, undefined, ownerCookie)).json()
+      .data as Array<{ id: string; email: string }>;
+    expect(membersAfter.some((m) => m.email === outsider.email)).toBe(false);
+    expect(
+      (await request('DELETE', `${membersPath}/${outsiderMember.id}`, undefined, ownerCookie))
+        .statusCode,
+    ).toBe(404);
+    expect(
+      (await request('GET', `/api/workspaces/${workspaceId}`, undefined, outsiderCookie))
+        .statusCode,
+    ).toBe(403);
     expect(
       (await request('POST', `/api/workspaces/${workspaceId}/invitations`, {}, scorerCookie))
         .statusCode,

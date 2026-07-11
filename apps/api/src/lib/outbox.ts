@@ -9,6 +9,9 @@ type Template =
   | 'password_reset_link'
   | 'email_changed'
   | 'workspace_invite';
+
+type RenderedEmail = { subject: string; text: string; html?: string };
+
 export async function queueEmail(
   client: DbClient,
   to: string,
@@ -21,29 +24,68 @@ export async function queueEmail(
     payload,
   ]);
 }
-function render(template: string, payload: Record<string, unknown>) {
-  const app = env().WEB_ORIGIN;
-  const map: Record<string, [string, string]> = {
-    verify_otp: ['Verify your TadScore account', `Your verification code is ${payload.code}.`],
-    verify_link: ['Verify your TadScore account', `Verify: ${app}/verify?token=${payload.token}`],
-    password_reset_otp: [
-      'Reset your TadScore password',
-      `Your password reset code is ${payload.code}.`,
-    ],
-    password_reset_link: [
-      'Reset your TadScore password',
-      `Reset: ${app}/reset-password?token=${payload.token}`,
-    ],
-    email_changed: [
-      'Your TadScore email changed',
-      'Your account email address was changed. Contact an administrator if this was not you.',
-    ],
-    workspace_invite: [
-      'TadScore workspace invitation',
-      `Join the workspace: ${app}/invite/${payload.token}`,
-    ],
+
+function escapeHtml(value: string) {
+  return value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+
+function inviteButtonHtml(url: string, label: string) {
+  return `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" style="display:inline-block;padding:12px 20px;background:#111827;color:#ffffff;text-decoration:none;border-radius:8px;font-weight:600;font-family:system-ui,-apple-system,Segoe UI,sans-serif;font-size:14px;line-height:1.2">${escapeHtml(label)}</a>`;
+}
+
+function render(template: string, payload: Record<string, unknown>): RenderedEmail {
+  const app = env().WEB_ORIGIN.split(',')[0]?.trim() || env().WEB_ORIGIN;
+  if (template === 'workspace_invite') {
+    const inviterName = String(payload.inviterFullName || 'Someone').trim() || 'Someone';
+    const workspaceName = String(payload.workspaceName || 'a workspace').trim() || 'a workspace';
+    const roleKey = String(payload.role || 'viewer').toLowerCase();
+    const roleLabel =
+      ({ admin: 'Admin', scorer: 'Scorer', viewer: 'Viewer' } as Record<string, string>)[roleKey] ||
+      'Viewer';
+    const joinUrl = `${app}/invite/${payload.token}`;
+    const subject = `${inviterName} invited you to ${workspaceName} as ${roleLabel}`;
+    const text = [
+      `${inviterName} invited you to ${workspaceName} as ${roleLabel}.`,
+      '',
+      `Join workspace: ${joinUrl}`,
+    ].join('\n');
+    const html = [
+      '<div style="font-family:system-ui,-apple-system,Segoe UI,sans-serif;font-size:15px;line-height:1.5;color:#111827">',
+      `<p style="margin:0 0 16px"><strong>${escapeHtml(inviterName)}</strong> invited you to <strong>${escapeHtml(workspaceName)}</strong> as <strong>${escapeHtml(roleLabel)}</strong>.</p>`,
+      `<p style="margin:0 0 20px">${inviteButtonHtml(joinUrl, 'Join workspace')}</p>`,
+      `<p style="margin:0;font-size:12px;color:#6b7280">If the button does not work, open this link:<br/><a href="${escapeHtml(joinUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(joinUrl)}</a></p>`,
+      '</div>',
+    ].join('');
+    return { subject, text, html };
+  }
+  const simple: Record<string, RenderedEmail> = {
+    verify_otp: {
+      subject: 'Verify your TadScore account',
+      text: `Your verification code is ${payload.code}.`,
+    },
+    verify_link: {
+      subject: 'Verify your TadScore account',
+      text: `Verify: ${app}/verify?token=${payload.token}`,
+    },
+    password_reset_otp: {
+      subject: 'Reset your TadScore password',
+      text: `Your password reset code is ${payload.code}.`,
+    },
+    password_reset_link: {
+      subject: 'Reset your TadScore password',
+      text: `Reset: ${app}/reset-password?token=${payload.token}`,
+    },
+    email_changed: {
+      subject: 'Your TadScore email changed',
+      text: 'Your account email address was changed. Contact an administrator if this was not you.',
+    },
   };
-  return map[template] ?? ['TadScore notification', JSON.stringify(payload)];
+  return simple[template] ?? { subject: 'TadScore notification', text: JSON.stringify(payload) };
 }
 
 export async function processOutboxBatch() {
@@ -67,8 +109,14 @@ export async function processOutboxBatch() {
     );
     for (const item of selected.rows) {
       try {
-        const [subject, text] = render(item.template, item.payload);
-        await transport.sendMail({ from: config.SMTP_FROM, to: item.to_email, subject, text });
+        const rendered = render(item.template, item.payload);
+        await transport.sendMail({
+          from: config.SMTP_FROM,
+          to: item.to_email,
+          subject: rendered.subject,
+          text: rendered.text,
+          html: rendered.html,
+        });
         await client.query(
           "UPDATE email_outbox SET status='sent',sent_at=now(),attempt_count=attempt_count+1,last_error=NULL WHERE id=$1",
           [item.id],

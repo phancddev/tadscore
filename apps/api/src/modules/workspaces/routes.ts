@@ -129,11 +129,25 @@ export async function workspaceRoutes(app: FastifyInstance) {
     { preHandler: requireWorkspaceRole('viewer') },
     async (request) => {
       const { workspaceId } = request.params as { workspaceId: string };
-      const members = await rows(
-        `SELECT u.id,u.email,u.username,u.full_name,u.avatar_path,m.role,m.status,m.joined_at FROM workspace_members m JOIN users u ON u.id=m.user_id WHERE m.workspace_id=$1 ORDER BY m.joined_at`,
+      const members = await rows<Record<string, unknown>>(
+        `SELECT u.id,u.email,u.username,u.full_name,u.avatar_path,m.role,m.status,m.joined_at FROM workspace_members m JOIN users u ON u.id=m.user_id WHERE m.workspace_id=$1 AND m.status='active' ORDER BY m.joined_at`,
         [workspaceId],
       );
-      return { data: camelize(members) };
+      return {
+        data: members.map((row) => {
+          const item = camelize(row) as Record<string, unknown>;
+          return {
+            id: item.id,
+            email: item.email,
+            username: item.username,
+            fullName: item.fullName,
+            role: item.role,
+            status: item.status,
+            joinedAt: item.joinedAt,
+            avatarUrl: row.avatar_path ? `/uploads/${row.avatar_path}` : null,
+          };
+        }),
+      };
     },
   );
   app.patch(
@@ -144,11 +158,11 @@ export async function workspaceRoutes(app: FastifyInstance) {
       await requireActiveWorkspace(workspaceId);
       const { role } = updateMemberSchema.parse(request.body);
       const result = await pool.query(
-        "UPDATE workspace_members SET role=$1 WHERE workspace_id=$2 AND user_id=$3 AND role<>'owner' RETURNING user_id,role,status",
+        "UPDATE workspace_members SET role=$1 WHERE workspace_id=$2 AND user_id=$3 AND role<>'owner' AND status='active' RETURNING user_id,role,status",
         [role, workspaceId, userId],
       );
       if (!result.rowCount)
-        throw new ApiError(404, 'NOT_FOUND', 'Member not found or owner cannot be changed');
+        throw new ApiError(404, 'NOT_FOUND', 'Active member not found or owner cannot be changed');
       await audit(request, 'workspace.member.role', 'user', userId, {
         workspaceId,
         after: { role },
@@ -179,6 +193,12 @@ export async function workspaceRoutes(app: FastifyInstance) {
     async (request, reply) => {
       const { workspaceId } = request.params as { workspaceId: string };
       const input = createInvitationSchema.parse(request.body);
+      if (
+        input.kind === 'email' &&
+        input.email &&
+        input.email.toLowerCase() === request.user!.email.toLowerCase()
+      )
+        throw new ApiError(400, 'SELF_INVITE', 'You cannot invite yourself to a workspace');
       const token = randomToken();
       await requireActiveWorkspace(workspaceId);
       const maxUses = input.kind === 'email' ? 1 : input.maxUses;
@@ -195,7 +215,17 @@ export async function workspaceRoutes(app: FastifyInstance) {
           request.user!.id,
         ],
       );
-      if (input.email) await queueEmail(pool, input.email, 'workspace_invite', { token });
+      if (input.email) {
+        const workspace = await one<{ name: string }>('SELECT name FROM workspaces WHERE id=$1', [
+          workspaceId,
+        ]);
+        await queueEmail(pool, input.email, 'workspace_invite', {
+          token,
+          inviterFullName: request.user!.fullName || request.user!.username,
+          workspaceName: workspace?.name || 'workspace',
+          role: input.role,
+        });
+      }
       await audit(request, 'workspace.invitation.create', 'invitation', String(invite?.id), {
         workspaceId,
         after: { kind: input.kind, role: input.role },

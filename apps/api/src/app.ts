@@ -38,6 +38,21 @@ export async function buildApp() {
   await app.register(swaggerUi, { routePrefix: '/api/docs' });
   await loadRules();
 
+  // Allow bodyless JSON requests (e.g. DELETE with Content-Type: application/json).
+  app.addContentTypeParser('application/json', { parseAs: 'string' }, (request, body, done) => {
+    if (!body || body.length === 0) {
+      done(null, undefined);
+      return;
+    }
+    try {
+      done(null, JSON.parse(body as string));
+    } catch (error) {
+      const err = error as Error & { statusCode?: number };
+      err.statusCode = 400;
+      done(err, undefined);
+    }
+  });
+
   app.addHook('onRequest', async (request) => {
     if (
       !['GET', 'HEAD', 'OPTIONS'].includes(request.method) &&

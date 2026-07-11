@@ -22,8 +22,8 @@ export async function adminRoutes(app: FastifyInstance) {
     const limit = Math.min(Number(q.limit) || 100, 500);
     const offset = Math.max(Number(q.offset) || 0, 0);
     const where = `($1='%%' OR email ILIKE $1 OR username ILIKE $1 OR full_name ILIKE $1) AND ($2::text IS NULL OR status::text=$2)`;
-    const data = await rows(
-      `SELECT id,email,username,full_name,global_role,status,email_verified_at,created_at,updated_at FROM users WHERE ${where} ORDER BY created_at DESC LIMIT $3 OFFSET $4`,
+    const data = await rows<Record<string, unknown>>(
+      `SELECT id,email,username,full_name,global_role,status,avatar_path,email_verified_at,created_at,updated_at FROM users WHERE ${where} ORDER BY created_at DESC LIMIT $3 OFFSET $4`,
       [search, q.status ?? null, limit, offset],
     );
     const total = await pool.query<{ count: string }>(
@@ -31,7 +31,19 @@ export async function adminRoutes(app: FastifyInstance) {
       [search, q.status ?? null],
     );
     return {
-      data: { items: camelize(data), total: Number(total.rows[0]?.count ?? 0), limit, offset },
+      data: {
+        items: data.map((row) => {
+          const item = camelize(row) as Record<string, unknown>;
+          delete item.avatarPath;
+          return {
+            ...item,
+            avatarUrl: row.avatar_path ? `/uploads/${row.avatar_path}` : null,
+          };
+        }),
+        total: Number(total.rows[0]?.count ?? 0),
+        limit,
+        offset,
+      },
     };
   });
   app.patch('/users/:userId', async (request) => {
