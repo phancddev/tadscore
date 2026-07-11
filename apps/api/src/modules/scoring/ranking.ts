@@ -120,6 +120,14 @@ type LedgerRow = {
   metadata?: Record<string, unknown> | null;
 };
 
+/** Active (non-reversed, non-reversal) ledger rows — used for public ranking & stats. */
+function isActiveLedgerEntry(entry: {
+  reversedAt: Date | null;
+  reversesEntryId: string | null;
+}) {
+  return !entry.reversedAt && !entry.reversesEntryId;
+}
+
 function buildTeamDetail(
   team: Record<string, unknown>,
   ledger: LedgerRow[],
@@ -147,14 +155,12 @@ function buildTeamDetail(
       metadata: row.metadata ?? null,
     };
   });
-  const wins = entries
-    .filter(
-      (entry) =>
-        entry.entryType === 'activity_award' &&
-        entry.activityRank === 1 &&
-        !entry.reversedAt &&
-        !entry.reversesEntryId,
-    )
+  // Public ranking must never expose reversed rows or reversal counters;
+  // those remain visible only in the workspace ledger/logs dashboard.
+  const active = entries.filter(isActiveLedgerEntry);
+  const displayEntries = options.publicView ? active : entries;
+  const wins = active
+    .filter((entry) => entry.entryType === 'activity_award' && entry.activityRank === 1)
     .map((entry) => ({
       entryId: entry.id,
       activityName: entry.activityName,
@@ -162,24 +168,21 @@ function buildTeamDetail(
       pieces: entry.pieceDelta,
       createdAt: entry.createdAt,
     }));
-  const adjustments = entries.filter(
-    (entry) =>
-      ['adjustment', 'penalty'].includes(entry.entryType) &&
-      !entry.reversedAt &&
-      !entry.reversesEntryId,
+  const adjustments = active.filter((entry) =>
+    ['adjustment', 'penalty'].includes(entry.entryType),
   );
   return {
     ...team,
     wins,
     winCount: wins.length,
-    totalMedalGain: entries
-      .filter((entry) => entry.medalDelta > 0 && !entry.reversedAt)
+    totalMedalGain: active
+      .filter((entry) => entry.medalDelta > 0)
       .reduce((sum, entry) => sum + entry.medalDelta, 0),
-    totalMedalLoss: entries
-      .filter((entry) => entry.medalDelta < 0 && !entry.reversedAt)
+    totalMedalLoss: active
+      .filter((entry) => entry.medalDelta < 0)
       .reduce((sum, entry) => sum + entry.medalDelta, 0),
     adjustmentCount: adjustments.length,
-    ledger: entries,
+    ledger: displayEntries,
   };
 }
 
@@ -209,16 +212,22 @@ export async function getPublicTeamDetail(workspaceId: string, teamId: string) {
   const ranking = await getRanking(workspaceId);
   const team = ranking.teams.find((item) => item.teamId === teamId);
   if (!team) throw new ApiError(404, 'NOT_FOUND', 'Team not found');
+  // Exclude reversal rows and already-reversed originals so public ranking
+  // never surfaces undone transactions (full history lives in ledger logs).
   const ledger = await rows<LedgerRow>(
     `SELECT l.id,l.entry_type,l.medal_delta,l.piece_delta,l.item_delta,l.created_at,l.reverses_entry_id,
-      a.name activity_name,r.created_at reversed_at,
+      a.name activity_name,NULL::timestamptz reversed_at,
       NULLIF(l.metadata->>'rank','')::int activity_rank,
       NULLIF(l.metadata->>'kind','') adjustment_kind,
       NULLIF(l.metadata->>'reason','') note
      FROM score_ledger l
      LEFT JOIN activities a ON a.id=l.activity_id
-     LEFT JOIN score_ledger r ON r.reverses_entry_id=l.id
      WHERE l.workspace_id=$1 AND l.team_id=$2
+       AND l.reverses_entry_id IS NULL
+       AND l.entry_type <> 'reversal'
+       AND NOT EXISTS (
+         SELECT 1 FROM score_ledger r WHERE r.reverses_entry_id=l.id
+       )
      ORDER BY l.created_at DESC`,
     [workspaceId, teamId],
   );

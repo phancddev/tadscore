@@ -20,6 +20,11 @@ export function TeamDetailView({
   const { t: tc } = useTranslation('common');
   const locale = i18n.language?.startsWith('en') ? 'en-US' : 'vi-VN';
   const wins = detail.wins ?? [];
+  // Defense-in-depth: public ranking never shows reversed/reversal rows
+  // (API also filters; logs dashboard keeps full history).
+  const ledger = publicView
+    ? detail.ledger.filter((entry) => !entry.reversedAt && !entry.reversesEntryId)
+    : detail.ledger;
 
   const entryTitle = (entry: LedgerEntry) => {
     if (entry.activityName) {
@@ -102,17 +107,19 @@ export function TeamDetailView({
       </section>
       <section>
         <h3 className="mb-2 text-sm font-semibold">{tr('detail.ledgerSection')}</h3>
-        {!detail.ledger.length ? (
+        {!ledger.length ? (
           <p className="m-0 text-sm text-[var(--muted-foreground)]">{tr('detail.noLedger')}</p>
         ) : (
           <div className="divide-y divide-[var(--border)]">
-            {detail.ledger.map((entry) => (
+            {ledger.map((entry) => (
               <div className="grid grid-cols-[1fr_auto] gap-3 py-3" key={entry.id}>
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="m-0 text-sm font-medium">{entryTitle(entry)}</p>
                     <Badge tone="outline">{entry.entryType}</Badge>
-                    {entry.reversedAt && <Badge tone="warning">{tr('detail.reversed')}</Badge>}
+                    {!publicView && entry.reversedAt && (
+                      <Badge tone="warning">{tr('detail.reversed')}</Badge>
+                    )}
                   </div>
                   <p className="m-0 mt-0.5 text-xs text-[var(--muted-foreground)]">
                     {new Date(entry.createdAt).toLocaleString(locale)}
