@@ -1,8 +1,8 @@
 .PHONY: setup up down restart logs ps migrate account-create test build validate docker-format docker-lint docker-test docker-build docker-check docker-api-integration docker-playwright
 
 setup:
-	@test -f .env || cp .env.example .env
-	@echo "Edit .env and replace all CHANGE_ME values, then run: make up"
+	@./scripts/generate-env.sh
+	@echo "Review .env (especially secrets), then run: make up"
 
 up:
 	docker compose up --build -d
