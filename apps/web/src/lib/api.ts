@@ -212,6 +212,24 @@ export const api = {
         notes?: string;
       },
     ) => post(`/workspaces/${id}/games`, value),
+    gameResults: (id: string, activityKey: string) =>
+      request<{
+        activityKey: string;
+        activityName: string;
+        status: string;
+        submissionId: string | null;
+        results: { teamId: string; rank: number }[];
+      }>(`/workspaces/${id}/activities/${encodeURIComponent(activityKey)}/results`),
+    replaceGame: (
+      id: string,
+      value: {
+        activityKey: string;
+        results: { teamId: string; rank: number }[];
+        idempotencyKey: string;
+        reason: string;
+        notes?: string;
+      },
+    ) => post(`/workspaces/${id}/games/replace`, value),
     adjust: (
       id: string,
       value: {

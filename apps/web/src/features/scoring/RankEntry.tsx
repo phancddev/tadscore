@@ -1,6 +1,7 @@
 import { Check } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import {
   Card,
@@ -21,18 +22,28 @@ export function ranksValid(ranks: Record<string, number>, teamIds: string[]) {
     new Set(teamIds.map((id) => ranks[id])).size === teamIds.length
   );
 }
+
+export type RankSubmitMode = 'create' | 'replace';
+
 export function RankEntry({
   teams,
   activities,
   saving,
   disabled,
+  loadingResults,
+  prefillRanks,
+  onActivityChange,
   onSubmit,
 }: {
   teams: Team[];
   activities: Activity[];
   saving: boolean;
   disabled?: boolean;
-  onSubmit: (activityKey: string, ranks: Record<string, number>) => void;
+  loadingResults?: boolean;
+  /** Loaded ranks for the selected activity (finalized replace flow). */
+  prefillRanks?: Record<string, number> | null;
+  onActivityChange?: (activityKey: string) => void;
+  onSubmit: (activityKey: string, ranks: Record<string, number>, mode: RankSubmitMode) => void;
 }) {
   const { t } = useTranslation('scoring');
   const [activityKey, setActivityKey] = useState('');
@@ -40,16 +51,26 @@ export function RankEntry({
   const [confirming, setConfirming] = useState(false);
   const available = activities.filter(
     (activity) =>
-      activity.activityType === 'ranked_game' && ['open', 'draft'].includes(activity.status),
+      activity.activityType === 'ranked_game' &&
+      ['open', 'draft', 'finalized'].includes(activity.status),
   );
+  const selected = available.find((activity) => activity.activityKey === activityKey);
+  const isReplace = selected?.status === 'finalized';
   const teamIds = teams.map((team) => team.teamId);
   const valid = useMemo(() => ranksValid(ranks, teamIds), [ranks, teamIds.join(':')]);
   useEffect(() => {
     if (available.some((activity) => activity.activityKey === activityKey)) return;
-    setActivityKey(available[0]?.activityKey || '');
+    const next = available[0]?.activityKey || '';
+    setActivityKey(next);
     setRanks({});
     setConfirming(false);
+    if (next) onActivityChange?.(next);
   }, [activityKey, activities]);
+  useEffect(() => {
+    if (!prefillRanks) return;
+    setRanks(prefillRanks);
+    setConfirming(false);
+  }, [prefillRanks, activityKey]);
   const assign = (teamId: string, rank: number) =>
     setRanks((current) => {
       const next = { ...current };
@@ -60,6 +81,12 @@ export function RankEntry({
       next[teamId] = rank;
       return next;
     });
+  const pickActivity = (key: string) => {
+    setActivityKey(key);
+    setRanks({});
+    setConfirming(false);
+    onActivityChange?.(key);
+  };
   return (
     <Card aria-labelledby="rank-title">
       <CardHeader>
@@ -72,61 +99,68 @@ export function RankEntry({
             id="activity"
             disabled={disabled}
             value={activityKey}
-            onChange={(event) => {
-              setActivityKey(event.target.value);
-              setRanks({});
-              setConfirming(false);
-            }}
+            onChange={(event) => pickActivity(event.target.value)}
           >
             <option value="">{t('rank.activityPlaceholder')}</option>
             {available.map((activity) => (
               <option key={activity.id} value={activity.activityKey}>
                 {activity.name}
+                {activity.status === 'finalized' ? ` (${t('rank.savedLabel')})` : ''}
               </option>
             ))}
           </Select>
         </Field>
-        <div className="grid gap-3">
-          {teams.map((team) => (
-            <fieldset
-              disabled={disabled}
-              key={team.teamId}
-              className="rounded-[var(--radius)] border border-[var(--border)] p-3"
-            >
-              <legend className="px-1 text-sm font-semibold">
-                {team.displayName || team.name}
-              </legend>
-              <div
-                className="grid gap-2"
-                style={{ gridTemplateColumns: `repeat(${teams.length}, minmax(0, 1fr))` }}
+        {isReplace && (
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge tone="warning">{t('rank.savedBadge')}</Badge>
+            <p className="m-0 text-sm text-[var(--muted-foreground)]">{t('rank.replaceHint')}</p>
+          </div>
+        )}
+        {loadingResults ? (
+          <p className="m-0 text-sm text-[var(--muted-foreground)]">{t('rank.loadingResults')}</p>
+        ) : (
+          <div className="grid gap-3">
+            {teams.map((team) => (
+              <fieldset
+                disabled={disabled || loadingResults}
+                key={team.teamId}
+                className="rounded-[var(--radius)] border border-[var(--border)] p-3"
               >
-                {teams.map((_, index) => {
-                  const rank = index + 1;
-                  const selected = ranks[team.teamId] === rank;
-                  return (
-                    <button
-                      key={rank}
-                      type="button"
-                      aria-pressed={selected}
-                      onClick={() => assign(team.teamId, rank)}
-                      className={cn(
-                        'relative min-h-11 rounded-[var(--radius)] border px-1 text-sm font-medium transition-colors',
-                        selected
-                          ? 'border-[var(--primary)] bg-[var(--primary)] text-[var(--primary-foreground)]'
-                          : 'border-[var(--border)] bg-transparent text-[var(--foreground)] hover:bg-[var(--muted)]',
-                      )}
-                    >
-                      {t('rank.place', { rank })}
-                      {selected && (
-                        <Check className="absolute right-1 top-1 h-3.5 w-3.5" aria-hidden />
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            </fieldset>
-          ))}
-        </div>
+                <legend className="px-1 text-sm font-semibold">
+                  {team.displayName || team.name}
+                </legend>
+                <div
+                  className="grid gap-2"
+                  style={{ gridTemplateColumns: `repeat(${teams.length}, minmax(0, 1fr))` }}
+                >
+                  {teams.map((_, index) => {
+                    const rank = index + 1;
+                    const selectedRank = ranks[team.teamId] === rank;
+                    return (
+                      <button
+                        key={rank}
+                        type="button"
+                        aria-pressed={selectedRank}
+                        onClick={() => assign(team.teamId, rank)}
+                        className={cn(
+                          'relative min-h-11 rounded-[var(--radius)] border px-1 text-sm font-medium transition-colors',
+                          selectedRank
+                            ? 'border-[var(--primary)] bg-[var(--primary)] text-[var(--primary-foreground)]'
+                            : 'border-[var(--border)] bg-transparent text-[var(--foreground)] hover:bg-[var(--muted)]',
+                        )}
+                      >
+                        {t('rank.place', { rank })}
+                        {selectedRank && (
+                          <Check className="absolute right-1 top-1 h-3.5 w-3.5" aria-hidden />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </fieldset>
+            ))}
+          </div>
+        )}
         {!valid && Object.keys(ranks).length > 0 && (
           <p role="status" className="m-0 text-sm text-[var(--warning)]">
             {t('rank.incomplete')}
@@ -134,15 +168,19 @@ export function RankEntry({
         )}
         {confirming ? (
           <div className="rounded-[var(--radius)] border border-[var(--border)] bg-[var(--muted)]/40 p-4">
-            <strong className="text-sm font-semibold">{t('rank.confirmTitle')}</strong>
-            <p className="my-2 text-sm text-[var(--muted-foreground)]">{t('rank.confirmBody')}</p>
+            <strong className="text-sm font-semibold">
+              {isReplace ? t('rank.confirmReplaceTitle') : t('rank.confirmTitle')}
+            </strong>
+            <p className="my-2 text-sm text-[var(--muted-foreground)]">
+              {isReplace ? t('rank.confirmReplaceBody') : t('rank.confirmBody')}
+            </p>
             <div className="flex flex-wrap gap-2">
               <Button
                 className="flex-1"
                 loading={saving}
-                onClick={() => onSubmit(activityKey, ranks)}
+                onClick={() => onSubmit(activityKey, ranks, isReplace ? 'replace' : 'create')}
               >
-                {t('rank.confirm')}
+                {isReplace ? t('rank.confirmReplace') : t('rank.confirm')}
               </Button>
               <Button variant="secondary" onClick={() => setConfirming(false)}>
                 {t('rank.back')}
@@ -152,10 +190,10 @@ export function RankEntry({
         ) : (
           <Button
             className="w-full"
-            disabled={disabled || !activityKey || !valid}
+            disabled={disabled || !activityKey || !valid || loadingResults}
             onClick={() => setConfirming(true)}
           >
-            {t('rank.checkSave')}
+            {isReplace ? t('rank.checkUpdate') : t('rank.checkSave')}
           </Button>
         )}
       </CardContent>

@@ -3,6 +3,7 @@ import { pool, rows } from '../../lib/db.js';
 import { camelize } from '../../lib/dto.js';
 import { requireWorkspaceRole } from '../auth/guards.js';
 import { economyRoutes } from './economy-routes.js';
+import { gameReplaceRoutes } from './game-replace-routes.js';
 import { gameRoutes } from './game-routes.js';
 import { ledgerEditRoutes } from './ledger-edit-routes.js';
 import { getRanking, getTeamDetail } from './ranking.js';
@@ -79,6 +80,7 @@ export async function scoringRoutes(app: FastifyInstance) {
     },
   );
   await app.register(gameRoutes);
+  await app.register(gameReplaceRoutes);
   await app.register(economyRoutes);
   await app.register(ledgerEditRoutes);
 }

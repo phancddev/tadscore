@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Cloud, CloudOff, LockKeyhole } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 import { Alert } from '../../components/ui/Alert';
@@ -54,14 +54,42 @@ export function ScorePage() {
     refresh();
     toast(message);
   };
+  const [rankActivityKey, setRankActivityKey] = useState('');
+  const gameResults = useQuery({
+    queryKey: ['game-results', workspaceId, rankActivityKey],
+    queryFn: () => api.scoring.gameResults(workspaceId, rankActivityKey),
+    enabled: Boolean(workspaceId && rankActivityKey),
+  });
+  const prefillRanks = useMemo(() => {
+    const results = gameResults.data?.results;
+    if (!results?.length) return null;
+    return Object.fromEntries(results.map((row) => [row.teamId, row.rank]));
+  }, [gameResults.data]);
   const game = useMutation({
-    mutationFn: ({ activityKey, ranks }: { activityKey: string; ranks: Record<string, number> }) =>
-      api.scoring.game(workspaceId, {
-        activityKey,
-        results: Object.entries(ranks).map(([teamId, rank]) => ({ teamId, rank })),
-        idempotencyKey: createIdempotencyKey(),
-      }),
-    onSuccess: () => success(t('page.savedRanks')),
+    mutationFn: ({
+      activityKey,
+      ranks,
+      mode,
+    }: {
+      activityKey: string;
+      ranks: Record<string, number>;
+      mode: 'create' | 'replace';
+    }) => {
+      const results = Object.entries(ranks).map(([teamId, rank]) => ({ teamId, rank }));
+      const idempotencyKey = createIdempotencyKey();
+      if (mode === 'replace')
+        return api.scoring.replaceGame(workspaceId, {
+          activityKey,
+          results,
+          idempotencyKey,
+          reason: t('rank.replaceReason'),
+        });
+      return api.scoring.game(workspaceId, { activityKey, results, idempotencyKey });
+    },
+    onSuccess: (_data, variables) => {
+      success(variables.mode === 'replace' ? t('page.updatedRanks') : t('page.savedRanks'));
+      client.invalidateQueries({ queryKey: ['game-results', workspaceId] });
+    },
   });
   const quick = useMutation({
     mutationFn: (data: QuickAction) =>
@@ -172,7 +200,10 @@ export function ScorePage() {
           activities={activities.data || []}
           saving={game.isPending}
           disabled={!canScore || !online}
-          onSubmit={(activityKey, ranks) => game.mutate({ activityKey, ranks })}
+          loadingResults={gameResults.isFetching && Boolean(rankActivityKey)}
+          prefillRanks={prefillRanks}
+          onActivityChange={setRankActivityKey}
+          onSubmit={(activityKey, ranks, mode) => game.mutate({ activityKey, ranks, mode })}
         />
         <QuickActions
           teams={ranking.data.teams}

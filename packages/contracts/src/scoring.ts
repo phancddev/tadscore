@@ -10,6 +10,10 @@ export const submitGameSchema = z.object({
     .min(2)
     .max(32),
 });
+/** Replace ranks on a finalized game: reverse prior awards then submit new ones (one transaction). */
+export const replaceGameSchema = submitGameSchema.extend({
+  reason: z.string().trim().min(2).max(500),
+});
 export const adjustmentSchema = z.object({
   teamId: uuidSchema,
   kind: z.enum(['speech', 'violation', 'manual']),

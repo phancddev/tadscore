@@ -56,19 +56,21 @@ share vĩnh viễn cho quyền edit. Owner không được cấp qua invitation.
 
 Prefix: `/api/workspaces/:workspaceId`.
 
-| Method/path suffix                  | Mục đích                                      | Quyền    |
-| ----------------------------------- | --------------------------------------------- | -------- |
-| `GET /activities`                   | Danh sách activity                            | `viewer` |
-| `GET /ranking`                      | Ranking nội bộ (+ shop/limits từ snapshot)    | `viewer` |
-| `GET /ranking/:teamId`              | Breakdown team                                | `viewer` |
-| `GET /ledger`                       | Audit scoring có filter/pagination            | `viewer` |
-| `POST /games`                       | Submit đủ kết quả rank của game               | `scorer` |
-| `POST /games/:submissionId/reverse` | Reverse toàn submission                       | `admin`  |
-| `POST /adjustments`                 | Speech/violation/adjustment                   | `scorer` |
-| `POST /purchases`                   | Mua mảnh/vật phẩm                             | `scorer` |
-| `PATCH /ledger/:entryId`            | Sửa medal delta + reason (adjustment/penalty) | `scorer` |
-| `POST /ledger/:entryId/reverse`     | Reverse một entry hợp lệ                      | `admin`  |
-| `GET /export.json`                  | Export ranking + ledger                       | `viewer` |
+| Method/path suffix                     | Mục đích                                      | Quyền    |
+| -------------------------------------- | --------------------------------------------- | -------- |
+| `GET /activities`                      | Danh sách activity                            | `viewer` |
+| `GET /ranking`                         | Ranking nội bộ (+ shop/limits từ snapshot)    | `viewer` |
+| `GET /ranking/:teamId`                 | Breakdown team                                | `viewer` |
+| `GET /ledger`                          | Audit scoring có filter/pagination            | `viewer` |
+| `POST /games`                          | Submit đủ kết quả rank của game               | `scorer` |
+| `POST /games/replace`                  | Sửa rank game đã finalized (reverse+submit)   | `scorer` |
+| `GET /activities/:activityKey/results` | Rank hiện tại (prefill UI)                    | `viewer` |
+| `POST /games/:submissionId/reverse`    | Reverse toàn submission                       | `admin`  |
+| `POST /adjustments`                    | Speech/violation/adjustment                   | `scorer` |
+| `POST /purchases`                      | Mua mảnh/vật phẩm                             | `scorer` |
+| `PATCH /ledger/:entryId`               | Sửa medal delta + reason (adjustment/penalty) | `scorer` |
+| `POST /ledger/:entryId/reverse`        | Reverse một entry hợp lệ                      | `admin`  |
+| `GET /export.json`                     | Export ranking + ledger                       | `viewer` |
 
 ### Idempotency
 
@@ -90,6 +92,13 @@ bịa giá/limit; mọi purchase/adjustment vẫn enforce server-side trên snap
 Request phải gửi đúng một kết quả cho mỗi team active và rank là hoán vị `1..N`. API lấy award từ
 rule snapshot của workspace, không tin medal/piece do client gửi. Transaction chỉ commit khi toàn
 bộ submission, activity result và ledger entry đều hợp lệ.
+
+### Replace game ranking
+
+`POST /games/replace` (scorer+) nhận cùng payload submit game cộng `reason`. Chỉ áp dụng khi
+activity đã `finalized`: trong **một transaction** đảo toàn bộ `activity_award` còn hiệu lực của
+submission trước, ghi submission + award mới, giữ activity `finalized`. `GET
+/activities/:activityKey/results` trả rank hiện tại để UI prefill. Không migrate schema.
 
 ### Edit adjustment / penalty
 

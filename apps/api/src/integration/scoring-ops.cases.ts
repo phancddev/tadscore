@@ -234,6 +234,41 @@ export async function runScoringOpsCases(ctx: Ctx) {
   expect(reverseConflict.statusCode).toBe(409);
   expect(reverseConflict.json().error.code).toBe('IDEMPOTENCY_CONFLICT');
 
+  // Re-submit warmup-1 (reopened by reverse), then replace ranks as scorer.
+  const resubmit = await post(
+    `${base}/games`,
+    { ...gameBody, activityKey: 'warmup-1', idempotencyKey: 'game-one-resubmit' },
+    scorerCookie,
+  );
+  expect(resubmit.statusCode).toBe(201);
+  const replaceBody = {
+    activityKey: 'warmup-1',
+    idempotencyKey: 'replace-warmup-1',
+    reason: 'fix ranks',
+    results: teams.map((team, index) => ({
+      teamId: team.id,
+      rank: index === 0 ? 2 : index === 1 ? 1 : index + 1,
+    })),
+  };
+  expect((await post(`${base}/games/replace`, replaceBody, viewerCookie)).statusCode).toBe(403);
+  const replaced = await post(`${base}/games/replace`, replaceBody, scorerCookie);
+  expect(replaced.statusCode).toBe(201);
+  expect((await post(`${base}/games/replace`, replaceBody, scorerCookie)).statusCode).toBe(200);
+  const savedRanks = await request(
+    'GET',
+    `${base}/activities/warmup-1/results`,
+    undefined,
+    viewerCookie,
+  );
+  expect(savedRanks.statusCode).toBe(200);
+  const rankByTeam = Object.fromEntries(
+    savedRanks
+      .json()
+      .data.results.map((row: { teamId: string; rank: number }) => [row.teamId, row.rank]),
+  );
+  expect(rankByTeam[teams[0]!.id]).toBe(2);
+  expect(rankByTeam[teams[1]!.id]).toBe(1);
+
   await request('PATCH', base, { status: 'locked' }, ownerCookie);
   expect((await request('GET', `${base}/ranking`, undefined, viewerCookie)).statusCode).toBe(200);
   expect(
