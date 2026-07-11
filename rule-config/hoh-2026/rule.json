@@ -1,0 +1,132 @@
+{
+  "id": "hoh-2026",
+  "version": "1.0.0",
+  "name": "House of Heroes 2026",
+  "teamCount": 4,
+  "activities": [
+    {
+      "key": "warmup-1",
+      "name": "Warm-up 1",
+      "type": "ranked_game",
+      "sequence": 1,
+      "medalAwards": [14, 7, 4, 2],
+      "pieceAwards": [0, 0, 0, 0],
+      "phase": "before-bg2"
+    },
+    {
+      "key": "warmup-2",
+      "name": "Warm-up 2",
+      "type": "ranked_game",
+      "sequence": 2,
+      "medalAwards": [14, 7, 4, 2],
+      "pieceAwards": [0, 0, 0, 0],
+      "phase": "before-bg2"
+    },
+    {
+      "key": "warmup-3",
+      "name": "Warm-up 3",
+      "type": "ranked_game",
+      "sequence": 3,
+      "medalAwards": [14, 7, 4, 2],
+      "pieceAwards": [0, 0, 0, 0],
+      "phase": "before-bg2"
+    },
+    {
+      "key": "warmup-4",
+      "name": "Warm-up 4",
+      "type": "ranked_game",
+      "sequence": 4,
+      "medalAwards": [14, 7, 4, 2],
+      "pieceAwards": [0, 0, 0, 0],
+      "phase": "before-bg2"
+    },
+    {
+      "key": "warmup-5",
+      "name": "Warm-up 5",
+      "type": "ranked_game",
+      "sequence": 5,
+      "medalAwards": [14, 7, 4, 2],
+      "pieceAwards": [0, 0, 0, 0],
+      "phase": "before-bg2"
+    },
+    {
+      "key": "midterm-1",
+      "name": "Midterm 1",
+      "type": "ranked_game",
+      "sequence": 6,
+      "medalAwards": [16, 8, 5, 3],
+      "pieceAwards": [0, 0, 0, 0],
+      "phase": "before-bg2"
+    },
+    {
+      "key": "midterm-2",
+      "name": "Midterm 2",
+      "type": "ranked_game",
+      "sequence": 7,
+      "medalAwards": [16, 8, 5, 3],
+      "pieceAwards": [0, 0, 0, 0],
+      "phase": "before-bg2"
+    },
+    {
+      "key": "midterm-3",
+      "name": "Midterm 3",
+      "type": "ranked_game",
+      "sequence": 8,
+      "medalAwards": [16, 8, 5, 3],
+      "pieceAwards": [0, 0, 0, 0],
+      "phase": "before-bg2"
+    },
+    {
+      "key": "midterm-4",
+      "name": "Midterm 4",
+      "type": "ranked_game",
+      "sequence": 9,
+      "medalAwards": [16, 8, 5, 3],
+      "pieceAwards": [0, 0, 0, 0],
+      "phase": "before-bg2"
+    },
+    {
+      "key": "midterm-5",
+      "name": "Midterm 5",
+      "type": "ranked_game",
+      "sequence": 10,
+      "medalAwards": [16, 8, 5, 3],
+      "pieceAwards": [0, 0, 0, 0],
+      "phase": "before-bg2"
+    },
+    {
+      "key": "big-game-1",
+      "name": "Big Game 1",
+      "type": "ranked_game",
+      "sequence": 11,
+      "medalAwards": [150, 100, 20, 5],
+      "pieceAwards": [0, 0, 0, 0],
+      "phase": "before-bg2"
+    },
+    {
+      "key": "big-game-2",
+      "name": "Big Game 2",
+      "type": "ranked_game",
+      "sequence": 12,
+      "medalAwards": [120, 60, 40, 20],
+      "pieceAwards": [3, 1, 0, 0],
+      "phase": "after-bg2"
+    }
+  ],
+  "adjustments": { "speech": 1, "violations": [-1, -2, -5] },
+  "shop": {
+    "piece": { "medalCost": 140, "medalDelta": -140, "pieceDelta": 1, "itemDelta": 0 },
+    "item": { "medalCost": 90, "medalDelta": -90, "pieceDelta": 0, "itemDelta": 1 }
+  },
+  "constraints": { "purchasePieceLimitBeforeActivity": { "activityKey": "big-game-2", "max": 1 } },
+  "ranking": {
+    "minimumPieces": 4,
+    "ineligibleSort": "pieces_then_medals",
+    "tieBreak": "name_then_id"
+  },
+  "assumptions": [
+    "Excel is authoritative: Warm-up first place is 14, not the PDF example 140.",
+    "Final awards sum to 515.",
+    "Eligible teams rank before ineligible teams; ineligible teams sort by pieces then medals; ties sort by name then id."
+  ]
+}

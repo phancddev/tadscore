@@ -1,0 +1,132 @@
+name: ${COMPOSE_PROJECT_NAME:-tadscore}
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-tadscore}
+      POSTGRES_USER: ${POSTGRES_USER:-tadscore}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+    networks: [internal]
+
+  migrate:
+    image: ghcr.io/amacneil/dbmate:2.25.0
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL in .env}
+    volumes:
+      - ./database/migrations:/db/migrations:ro
+    command: [--migrations-dir, /db/migrations, up]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks: [internal]
+    restart: 'no'
+
+  mailpit:
+    image: axllent/mailpit:v1.27.8
+    restart: unless-stopped
+    environment:
+      MP_DATABASE: /data/mailpit.db
+      MP_SMTP_AUTH_ACCEPT_ANY: '1'
+      MP_SMTP_AUTH_ALLOW_INSECURE: '1'
+    volumes:
+      - mailpit-data:/data
+    ports:
+      - '${MAILPIT_UI_PORT:-1109}:8025'
+    healthcheck:
+      test: [CMD, /mailpit, readyz]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks: [internal]
+
+  api:
+    build:
+      context: .
+      dockerfile: docker/api.Dockerfile
+    restart: unless-stopped
+    init: true
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      HOST: 0.0.0.0
+      DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL in .env}
+      WEB_ORIGIN: ${WEB_ORIGIN:-http://localhost:1107}
+      RULE_CONFIG_PATH: ${RULE_CONFIG_PATH:-/app/rule-config}
+      AUTH_EMAIL_VERIFICATION_MODE: ${AUTH_EMAIL_VERIFICATION_MODE:-otp}
+      AUTH_OTP_LENGTH: ${AUTH_OTP_LENGTH:-6}
+      AUTH_OTP_TTL_SECONDS: ${AUTH_OTP_TTL_SECONDS:-86400}
+      AUTH_OTP_MAX_ATTEMPTS: ${AUTH_OTP_MAX_ATTEMPTS:-5}
+      AUTH_OTP_RESEND_COOLDOWN_SECONDS: ${AUTH_OTP_RESEND_COOLDOWN_SECONDS:-300}
+      AUTH_OTP_MAX_SENDS: ${AUTH_OTP_MAX_SENDS:-5}
+      AUTH_OTP_SEND_WINDOW_SECONDS: ${AUTH_OTP_SEND_WINDOW_SECONDS:-86400}
+      AUTH_OTP_LOCK_SECONDS: ${AUTH_OTP_LOCK_SECONDS:-18000}
+      SESSION_COOKIE_NAME: ${SESSION_COOKIE_NAME:-tadscore_session}
+      SESSION_TTL_SECONDS: ${SESSION_TTL_SECONDS:-604800}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      AUTH_LOGIN_MAX_ATTEMPTS: ${AUTH_LOGIN_MAX_ATTEMPTS:-10}
+      AUTH_LOGIN_WINDOW_SECONDS: ${AUTH_LOGIN_WINDOW_SECONDS:-900}
+      AUTH_LOGIN_LOCK_SECONDS: ${AUTH_LOGIN_LOCK_SECONDS:-900}
+      SMTP_HOST: ${SMTP_HOST:-mailpit}
+      SMTP_PORT: ${SMTP_PORT:-1025}
+      SMTP_SECURE: ${SMTP_SECURE:-false}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-TadScore Local <noreply@tadscore.local>}
+      UPLOAD_DIR: ${UPLOAD_DIR:-/data/uploads}
+      MAX_AVATAR_BYTES: ${MAX_AVATAR_BYTES:-5242880}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      TRUST_PROXY: ${TRUST_PROXY:-true}
+    volumes:
+      - uploads-data:/data/uploads
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      mailpit:
+        condition: service_healthy
+    networks: [internal]
+
+  web:
+    build:
+      context: .
+      dockerfile: docker/web.Dockerfile
+    restart: unless-stopped
+    ports:
+      - '${APP_PORT:-1107}:8080'
+    healthcheck:
+      test: [CMD, wget, -qO-, http://127.0.0.1:8080/health]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    depends_on:
+      api:
+        condition: service_healthy
+    networks: [internal]
+
+networks:
+  internal:
+    driver: bridge
+
+volumes:
+  postgres-data:
+  mailpit-data:
+  uploads-data:

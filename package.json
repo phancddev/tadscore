@@ -1,0 +1,26 @@
+{
+  "name": "tadscore",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@10.13.1",
+  "engines": {
+    "node": ">=22.0.0",
+    "pnpm": ">=10.0.0"
+  },
+  "scripts": {
+    "build": "pnpm -r --if-present build",
+    "dev": "pnpm -r --parallel --if-present dev",
+    "lint": "pnpm run lines:check && pnpm run db:check && pnpm -r --if-present lint",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "pnpm -r --if-present test",
+    "test:e2e": "pnpm --filter @tadscore/web --if-present test:e2e",
+    "lines:check": "node scripts/check-file-lines.mjs",
+    "db:check": "node scripts/check-migrations.mjs",
+    "db:migrate": "docker compose run --rm migrate",
+    "account:create": "./scripts/create-account.sh"
+  },
+  "devDependencies": {
+    "prettier": "^3.6.2"
+  }
+}
