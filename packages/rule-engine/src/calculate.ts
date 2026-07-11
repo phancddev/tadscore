@@ -1,9 +1,16 @@
 import type { RankedTeam, RuleDefinition, TeamBalance } from './schema.js';
 
-export function activityAward(rule: RuleDefinition, activityKey: string, rank: number) {
+export function activityAward(
+  rule: RuleDefinition,
+  activityKey: string,
+  rank: number,
+  activeTeamCount = rule.teamCount,
+) {
   const activity = rule.activities.find((candidate) => candidate.key === activityKey);
   if (!activity || activity.type !== 'ranked_game') throw new Error('Unknown ranked activity');
-  if (rank < 1 || rank > rule.teamCount) throw new Error('Rank out of range');
+  if (!Number.isInteger(activeTeamCount) || activeTeamCount < 2)
+    throw new Error('Active team count out of range');
+  if (rank < 1 || rank > activeTeamCount) throw new Error('Rank out of range');
   return {
     medals: activity.medalAwards?.[rank - 1] ?? 0,
     pieces: activity.pieceAwards?.[rank - 1] ?? 0,

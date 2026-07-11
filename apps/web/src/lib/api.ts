@@ -5,6 +5,7 @@ import type {
   Health,
   Invitation,
   LedgerEntry,
+  ManagedTeam,
   Member,
   OutboxItem,
   PublicLink,
@@ -118,7 +119,36 @@ export const api = {
       id: string,
       value: { name?: string; description?: string | null; status?: WorkspaceStatus },
     ) => patch<Workspace>(`/workspaces/${id}`, value),
-    teams: (id: string) => request<Team[]>(`/workspaces/${id}/teams`),
+    teams: (id: string) => request<ManagedTeam[]>(`/workspaces/${id}/teams`),
+    createTeam: (
+      id: string,
+      value: {
+        code: string;
+        name: string;
+        displayName: string;
+        color?: string;
+        icon?: string;
+        sortOrder?: number;
+      },
+    ) => post<ManagedTeam>(`/workspaces/${id}/teams`, value),
+    updateTeam: (
+      id: string,
+      teamId: string,
+      value: {
+        code?: string;
+        name?: string;
+        displayName?: string;
+        color?: string | null;
+        icon?: string | null;
+        sortOrder?: number;
+        isActive?: boolean;
+      },
+    ) => patch<ManagedTeam>(`/workspaces/${id}/teams/${teamId}`, value),
+    deleteTeam: (id: string, teamId: string) =>
+      request<{ id: string; deleted?: boolean; deactivated?: boolean } | void>(
+        `/workspaces/${id}/teams/${teamId}`,
+        { method: 'DELETE' },
+      ),
     activities: (id: string) => request<Activity[]>(`/workspaces/${id}/activities`),
     members: (id: string) => request<Member[]>(`/workspaces/${id}/members`),
     invitations: (id: string) => request<Invitation[]>(`/workspaces/${id}/invitations`),

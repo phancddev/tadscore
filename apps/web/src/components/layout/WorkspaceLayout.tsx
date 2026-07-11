@@ -1,4 +1,4 @@
-import { Activity, History, LayoutDashboard, Settings, Trophy, Users } from 'lucide-react';
+import { Activity, History, Home, LayoutDashboard, Settings, Trophy, Users } from 'lucide-react';
 import { NavLink, Outlet, useParams } from 'react-router-dom';
 import { cn } from '../../lib/cn';
 
@@ -6,6 +6,7 @@ export function WorkspaceLayout() {
   const { workspaceId } = useParams();
   const tabs = [
     ['', 'Tổng quan', LayoutDashboard],
+    ['teams', 'Nhà', Home],
     ['score', 'Nhập điểm', Activity],
     ['ranking', 'Xếp hạng', Trophy],
     ['members', 'Thành viên', Users],

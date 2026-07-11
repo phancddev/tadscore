@@ -52,8 +52,8 @@ export function WorkspaceOverview() {
       {workspace.data?.status !== 'active' && (
         <Alert variant="warning" className="mb-5">
           <span>
-            Workspace đang ở trạng thái <strong>{workspace.data?.status}</strong>. Dữ liệu chỉ đọc và
-            thao tác nhập điểm đã tắt.
+            Workspace đang ở trạng thái <strong>{workspace.data?.status}</strong>. Dữ liệu chỉ đọc
+            và thao tác nhập điểm đã tắt.
           </span>
         </Alert>
       )}

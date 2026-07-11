@@ -55,24 +55,24 @@ export async function gameRoutes(app: FastifyInstance) {
           };
         }
         const rule = await loadMutableRule(client, workspaceId);
-        const ranks = input.results.map((result) => result.rank);
-        if (
-          !validateRankPermutation(ranks, rule.teamCount) ||
-          new Set(input.results.map((result) => result.teamId)).size !== rule.teamCount
-        )
-          throw new ApiError(
-            400,
-            'INVALID_RANKS',
-            `Results must contain each rank 1..${rule.teamCount} exactly once`,
-          );
         const teams = await client.query<{ id: string }>(
           'SELECT id FROM teams WHERE workspace_id=$1 AND is_active ORDER BY id FOR SHARE',
           [workspaceId],
         );
+        const activeTeamCount = teams.rowCount ?? 0;
+        if (activeTeamCount < 2)
+          throw new ApiError(409, 'TEAM_COUNT', 'At least two active teams are required');
+        const ranks = input.results.map((result) => result.rank);
         if (
-          teams.rowCount !== rule.teamCount ||
-          input.results.some((result) => !teams.rows.some((team) => team.id === result.teamId))
+          !validateRankPermutation(ranks, activeTeamCount) ||
+          new Set(input.results.map((result) => result.teamId)).size !== activeTeamCount
         )
+          throw new ApiError(
+            400,
+            'INVALID_RANKS',
+            `Results must contain each rank 1..${activeTeamCount} exactly once`,
+          );
+        if (input.results.some((result) => !teams.rows.some((team) => team.id === result.teamId)))
           throw new ApiError(
             400,
             'INVALID_TEAMS',
@@ -97,7 +97,7 @@ export async function gameRoutes(app: FastifyInstance) {
           )
         ).rows[0]!;
         for (const result of input.results) {
-          const award = activityAward(rule, input.activityKey, result.rank);
+          const award = activityAward(rule, input.activityKey, result.rank, activeTeamCount);
           await client.query(
             'INSERT INTO activity_results(workspace_id,submission_id,team_id,rank,metadata) VALUES($1,$2,$3,$4,$5)',
             [workspaceId, created.id, result.teamId, result.rank, award],

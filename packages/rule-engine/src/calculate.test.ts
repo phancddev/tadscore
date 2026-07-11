@@ -10,6 +10,11 @@ describe('HOH rule', () => {
     expect(activityAward(rule, 'big-game-2', 2)).toEqual({ medals: 60, pieces: 1 });
     expect(purchaseCost(rule, 'piece', 2).medalCost).toBe(280);
   });
+  it('allows dynamic team counts with zero awards beyond the table', () => {
+    expect(activityAward(rule, 'warmup-1', 5, 5)).toEqual({ medals: 0, pieces: 0 });
+    expect(activityAward(rule, 'warmup-1', 3, 3)).toEqual({ medals: 4, pieces: 0 });
+    expect(() => activityAward(rule, 'warmup-1', 4, 3)).toThrow(/Rank out of range/);
+  });
   it('ranks eligible first and breaks ties deterministically', () => {
     const result = rankTeams(rule, [
       { teamId: 'b', name: 'Mai', medals: 999, pieces: 3, items: 0 },

@@ -115,12 +115,7 @@ export function ProfilePage() {
                   save.mutate();
                 }}
               >
-                <ProfileField
-                  id="full-name"
-                  label="Họ và tên"
-                  value={fullName}
-                  set={setFullName}
-                />
+                <ProfileField id="full-name" label="Họ và tên" value={fullName} set={setFullName} />
                 <ProfileField id="username" label="Username" value={username} set={setUsername} />
                 <ProfileField
                   id="email"

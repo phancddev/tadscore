@@ -14,6 +14,7 @@ import { ScorePage } from '../features/scoring/ScorePage';
 import { JoinPage } from '../features/workspaces/JoinPage';
 import { MembersPage } from '../features/workspaces/MembersPage';
 import { SettingsPage } from '../features/workspaces/SettingsPage';
+import { TeamsPage } from '../features/workspaces/TeamsPage';
 import { WorkspaceOverview } from '../features/workspaces/WorkspaceOverview';
 import { WorkspacesPage } from '../features/workspaces/WorkspacesPage';
 import { LoadingState } from '../components/ui/State';
@@ -79,6 +80,7 @@ export function AppRouter() {
           <Route path="profile" element={<ProfilePage />} />
           <Route path="workspaces/:workspaceId" element={<WorkspaceLayout />}>
             <Route index element={<WorkspaceOverview />} />
+            <Route path="teams" element={<TeamsPage />} />
             <Route path="score" element={<ScorePage />} />
             <Route path="ranking" element={<InternalRankingPage />} />
             <Route path="members" element={<MembersPage />} />

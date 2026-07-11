@@ -101,14 +101,30 @@ describeIf.sequential('API integration', () => {
     ).json().data as Array<{ id: string }>;
     expect(teams).toHaveLength(4);
 
-    const teamLimit = await request(
+    const teamPath = `/api/workspaces/${workspaceId}/teams`;
+    const extraTeam = await request(
       'POST',
-      `/api/workspaces/${workspaceId}/teams`,
-      { code: 'extra', name: 'Extra', displayName: 'Extra', sortOrder: 5 },
+      teamPath,
+      { code: 'extra', name: 'Extra', displayName: 'Nhà Extra', sortOrder: 5, color: '#111827' },
       adminCookie,
     );
-    expect(teamLimit.statusCode).toBe(409);
-    expect(teamLimit.json().error.code).toBe('TEAM_LIMIT');
+    expect(extraTeam.statusCode).toBe(201);
+    const extraId = extraTeam.json().data.id as string;
+    expect(
+      (
+        await request(
+          'PATCH',
+          `${teamPath}/${extraId}`,
+          { displayName: 'Nhà Extra 2' },
+          adminCookie,
+        )
+      ).statusCode,
+    ).toBe(200);
+    expect(
+      (await request('DELETE', `${teamPath}/${extraId}`, undefined, adminCookie)).statusCode,
+    ).toBe(204);
+    teams = (await request('GET', teamPath, undefined, viewerCookie)).json().data;
+    expect(teams).toHaveLength(4);
     expect(
       (await request('POST', `/api/workspaces/${workspaceId}/invitations`, {}, scorerCookie))
         .statusCode,
@@ -117,43 +133,28 @@ describeIf.sequential('API integration', () => {
 
   test('scoring, public privacy, idempotency, and operations', async () => {
     const { request } = api;
+    const base = `/api/workspaces/${workspaceId}`;
     const gameBody = {
       activityKey: 'warmup-1',
       idempotencyKey: 'game-one',
       results: teams.map((team, index) => ({ teamId: team.id, rank: index + 1 })),
     };
-    expect(
-      (await request('POST', `/api/workspaces/${workspaceId}/games`, gameBody, viewerCookie))
-        .statusCode,
-    ).toBe(403);
-    const game = await request(
-      'POST',
-      `/api/workspaces/${workspaceId}/games`,
-      gameBody,
-      scorerCookie,
-    );
+    const post = (path: string, body: unknown, cookie: string) =>
+      request('POST', path, body, cookie);
+    expect((await post(`${base}/games`, gameBody, viewerCookie)).statusCode).toBe(403);
+    const game = await post(`${base}/games`, gameBody, scorerCookie);
     expect(game.statusCode).toBe(201);
+    expect((await post(`${base}/games`, gameBody, scorerCookie)).statusCode).toBe(200);
     expect(
-      (await request('POST', `/api/workspaces/${workspaceId}/games`, gameBody, scorerCookie))
+      (await post(`${base}/games`, { ...gameBody, activityKey: 'warmup-2' }, scorerCookie))
         .statusCode,
-    ).toBe(200);
-    expect(
-      (
-        await request(
-          'POST',
-          `/api/workspaces/${workspaceId}/games`,
-          { ...gameBody, activityKey: 'warmup-2' },
-          scorerCookie,
-        )
-      ).statusCode,
     ).toBe(409);
 
     const teamId = teams[0]!.id;
+    const adjust = (body: object, cookie: string) => post(`${base}/adjustments`, body, cookie);
     expect(
       (
-        await request(
-          'POST',
-          `/api/workspaces/${workspaceId}/adjustments`,
+        await adjust(
           {
             teamId,
             kind: 'manual',
@@ -165,57 +166,72 @@ describeIf.sequential('API integration', () => {
         )
       ).statusCode,
     ).toBe(403);
-    const grant = await request(
-      'POST',
-      `/api/workspaces/${workspaceId}/adjustments`,
-      { teamId, kind: 'manual', medalDelta: 126, reason: 'grant', idempotencyKey: 'grant-piece' },
-      adminCookie,
-    );
-    expect(grant.statusCode).toBe(201);
     expect(
       (
-        await request(
-          'POST',
-          `/api/workspaces/${workspaceId}/purchases`,
+        await adjust(
+          {
+            teamId,
+            kind: 'manual',
+            medalDelta: -2,
+            reason: 'manual minus',
+            idempotencyKey: 'scorer-manual-minus',
+          },
+          scorerCookie,
+        )
+      ).statusCode,
+    ).toBe(201);
+    expect(
+      (
+        await adjust(
+          {
+            teamId,
+            kind: 'manual',
+            medalDelta: 128,
+            reason: 'grant',
+            idempotencyKey: 'grant-piece',
+          },
+          adminCookie,
+        )
+      ).statusCode,
+    ).toBe(201);
+    expect(
+      (
+        await post(
+          `${base}/purchases`,
           { teamId, itemKey: 'piece', quantity: 2, idempotencyKey: 'piece-too-many' },
           scorerCookie,
         )
       ).statusCode,
     ).toBe(409);
-    const purchase = await request(
-      'POST',
-      `/api/workspaces/${workspaceId}/purchases`,
-      { teamId, itemKey: 'piece', quantity: 1, idempotencyKey: 'piece-one' },
-      scorerCookie,
-    );
-    expect(purchase.statusCode).toBe(201);
+    expect(
+      (
+        await post(
+          `${base}/purchases`,
+          { teamId, itemKey: 'piece', quantity: 1, idempotencyKey: 'piece-one' },
+          scorerCookie,
+        )
+      ).statusCode,
+    ).toBe(201);
+    expect(
+      (await request('GET', `${base}/ranking`, undefined, viewerCookie)).json().data.teams[0]
+        .medals,
+    ).toBe(0);
 
-    const ranking = await request(
-      'GET',
-      `/api/workspaces/${workspaceId}/ranking`,
-      undefined,
-      viewerCookie,
-    );
-    expect(ranking.json().data.teams[0].medals).toBe(0);
-    const publicLink = await request(
-      'POST',
-      `/api/workspaces/${workspaceId}/public-links`,
-      { label: 'public' },
-      ownerCookie,
-    );
-    const publicToken = publicLink.json().data.token;
+    const publicLink = await post(`${base}/public-links`, { label: 'public' }, ownerCookie);
+    const publicToken = publicLink.json().data.token as string;
     expect((await request('GET', `/api/public/rankings/${publicToken}`)).statusCode).toBe(200);
     const publicTeam = await request('GET', `/api/public/rankings/${publicToken}/teams/${teamId}`);
     expect(publicTeam.statusCode).toBe(200);
-    const publicTeamText = JSON.stringify(publicTeam.json());
-    expect(publicTeamText).not.toContain('createdByName');
-    expect(publicTeamText).not.toContain('metadata');
-    expect(publicTeamText).not.toContain('@example.test');
+    expect(Array.isArray(publicTeam.json().data.wins)).toBe(true);
+    expect(publicTeam.json().data.ledger[0]).toHaveProperty('activityRank');
+    expect(JSON.stringify(publicTeam.json())).not.toMatch(
+      /createdByName|"metadata"|@example\.test/,
+    );
     expect(
       (
         await request(
           'DELETE',
-          `/api/workspaces/${workspaceId}/public-links/${publicLink.json().data.id}`,
+          `${base}/public-links/${publicLink.json().data.id}`,
           undefined,
           ownerCookie,
         )
@@ -223,70 +239,59 @@ describeIf.sequential('API integration', () => {
     ).toBe(204);
     expect((await request('GET', `/api/public/rankings/${publicToken}`)).statusCode).toBe(404);
 
-    const secondGame = await request(
-      'POST',
-      `/api/workspaces/${workspaceId}/games`,
+    const secondGame = await post(
+      `${base}/games`,
       { ...gameBody, activityKey: 'warmup-2', idempotencyKey: 'game-two' },
       scorerCookie,
     );
     expect(secondGame.statusCode).toBe(201);
-    const reversed = await request(
-      'POST',
-      `/api/workspaces/${workspaceId}/games/${game.json().data.id}/reverse`,
-      { reason: 'mistake', idempotencyKey: 'reverse-game-1' },
-      adminCookie,
-    );
-    expect(reversed.statusCode).toBe(201);
+    const reversePath = `${base}/games/${game.json().data.id}/reverse`;
     expect(
       (
-        await request(
-          'POST',
-          `/api/workspaces/${workspaceId}/games/${game.json().data.id}/reverse`,
+        await post(
+          reversePath,
+          { reason: 'mistake', idempotencyKey: 'reverse-game-1' },
+          adminCookie,
+        )
+      ).statusCode,
+    ).toBe(201);
+    expect(
+      (
+        await post(
+          reversePath,
           { reason: 'mistake', idempotencyKey: 'reverse-game-1' },
           adminCookie,
         )
       ).statusCode,
     ).toBe(200);
-    const reverseConflict = await request(
-      'POST',
-      `/api/workspaces/${workspaceId}/games/${secondGame.json().data.id}/reverse`,
+    const reverseConflict = await post(
+      `${base}/games/${secondGame.json().data.id}/reverse`,
       { reason: 'mistake', idempotencyKey: 'reverse-game-1' },
       adminCookie,
     );
     expect(reverseConflict.statusCode).toBe(409);
     expect(reverseConflict.json().error.code).toBe('IDEMPOTENCY_CONFLICT');
 
-    await request('PATCH', `/api/workspaces/${workspaceId}`, { status: 'locked' }, ownerCookie);
-    expect(
-      (await request('GET', `/api/workspaces/${workspaceId}/ranking`, undefined, viewerCookie))
-        .statusCode,
-    ).toBe(200);
+    await request('PATCH', base, { status: 'locked' }, ownerCookie);
+    expect((await request('GET', `${base}/ranking`, undefined, viewerCookie)).statusCode).toBe(200);
     expect(
       (
-        await request(
-          'POST',
-          `/api/workspaces/${workspaceId}/adjustments`,
-          {
-            teamId,
-            kind: 'speech',
-            medalDelta: 1,
-            reason: 'speech',
-            idempotencyKey: 'locked-key',
-          },
+        await adjust(
+          { teamId, kind: 'speech', medalDelta: 1, reason: 'speech', idempotencyKey: 'locked-key' },
           scorerCookie,
         )
       ).statusCode,
     ).toBe(409);
-    await request('PATCH', `/api/workspaces/${workspaceId}`, { status: 'archived' }, ownerCookie);
+    await request('PATCH', base, { status: 'archived' }, ownerCookie);
+    expect((await request('GET', `${base}/export.json`, undefined, viewerCookie)).statusCode).toBe(
+      200,
+    );
     expect(
-      (await request('GET', `/api/workspaces/${workspaceId}/export.json`, undefined, viewerCookie))
-        .statusCode,
-    ).toBe(200);
-
-    const audit = await request('GET', '/api/admin/audit-logs', undefined, ownerCookie);
-    expect(audit.json().data.total).toBeGreaterThan(0);
-    const outbox = await request('GET', '/api/admin/outbox', undefined, ownerCookie);
-    expect(outbox.json().data.total).toBeGreaterThan(0);
+      (await request('GET', '/api/admin/audit-logs', undefined, ownerCookie)).json().data.total,
+    ).toBeGreaterThan(0);
+    expect(
+      (await request('GET', '/api/admin/outbox', undefined, ownerCookie)).json().data.total,
+    ).toBeGreaterThan(0);
     expect((await request('GET', '/api/admin/health', undefined, ownerCookie)).statusCode).toBe(
       200,
     );

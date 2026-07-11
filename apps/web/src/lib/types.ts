@@ -52,6 +52,26 @@ export type Team = {
   eligible: boolean;
   rank: number;
 };
+export type ManagedTeam = {
+  id: string;
+  code: string;
+  name: string;
+  displayName: string;
+  color?: string | null;
+  icon?: string | null;
+  sortOrder?: number;
+  isActive: boolean;
+  medals?: number;
+  pieces?: number;
+  items?: number;
+};
+export type TeamWin = {
+  entryId: string;
+  activityName?: string | null;
+  medals: number;
+  pieces: number;
+  createdAt: string;
+};
 export type Activity = {
   id: string;
   activityKey: string;
@@ -95,16 +115,19 @@ export type PublicLink = {
 };
 export type LedgerEntry = {
   id: string;
-  teamId: string;
-  teamName: string;
+  teamId?: string;
+  teamName?: string;
   entryType: string;
   medalDelta: number;
   pieceDelta: number;
   itemDelta: number;
-  metadata?: Record<string, unknown>;
+  metadata?: Record<string, unknown> | null;
   activityName?: string | null;
+  activityRank?: number | null;
+  adjustmentKind?: string | null;
+  note?: string | null;
   createdAt: string;
-  createdByName: string;
+  createdByName?: string;
   reversesEntryId?: string | null;
   reversed?: boolean;
   reversedAt?: string | null;
@@ -114,7 +137,14 @@ export type Ranking = {
   rule: { id: string; version: string; minimumPieces: number };
   teams: Team[];
 };
-export type TeamDetail = Team & { ledger: LedgerEntry[] };
+export type TeamDetail = Team & {
+  ledger: LedgerEntry[];
+  wins?: TeamWin[];
+  winCount?: number;
+  totalMedalGain?: number;
+  totalMedalLoss?: number;
+  adjustmentCount?: number;
+};
 export type AuthConfig = {
   emailVerificationMode: 'off' | 'otp' | 'link';
   otpResendCooldownSeconds?: number;

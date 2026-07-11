@@ -63,8 +63,8 @@ export function ScorePage() {
     mutationFn: (data: QuickAction) =>
       api.scoring.adjust(workspaceId, {
         teamId: data.teamId,
-        kind: data.mode as 'speech' | 'violation',
-        medalDelta: data.mode === 'violation' ? -data.value : data.value,
+        kind: 'manual',
+        medalDelta: data.value,
         reason: data.reason,
         idempotencyKey: createIdempotencyKey(),
       }),

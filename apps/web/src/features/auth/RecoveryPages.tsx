@@ -40,10 +40,7 @@ export function ForgotPage() {
             >
               Nhập mã đặt lại
             </Link>
-            <Link
-              className="text-sm font-medium underline-offset-4 hover:underline"
-              to="/login"
-            >
+            <Link className="text-sm font-medium underline-offset-4 hover:underline" to="/login">
               Về đăng nhập
             </Link>
           </CardContent>
@@ -97,10 +94,7 @@ export function ResetPage() {
             <p className="m-0 text-sm">
               Mật khẩu đã được thay đổi. Tất cả phiên cũ đã bị đăng xuất.
             </p>
-            <Link
-              to="/login"
-              className="text-sm font-medium underline-offset-4 hover:underline"
-            >
+            <Link to="/login" className="text-sm font-medium underline-offset-4 hover:underline">
               Đăng nhập
             </Link>
           </CardContent>

@@ -126,10 +126,7 @@ export function MembersPage() {
       ) : (
         <Card className="divide-y divide-[var(--border)] overflow-hidden">
           {members.data.map((member) => (
-            <article
-              key={member.id}
-              className="flex flex-wrap items-center gap-3 px-4 py-3"
-            >
+            <article key={member.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
               <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-[var(--border)] bg-[var(--muted)]/50 text-sm font-semibold">
                 {(member.fullName || member.email).slice(0, 1).toUpperCase()}
               </span>

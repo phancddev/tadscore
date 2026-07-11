@@ -121,11 +121,7 @@ export function WorkspacesPage() {
               placeholder="Trại hè 2026"
             />
           </Field>
-          <Field
-            label="Slug"
-            htmlFor="slug"
-            hint="Dùng để nhận diện ngắn gọn, không chứa dấu."
-          >
+          <Field label="Slug" htmlFor="slug" hint="Dùng để nhận diện ngắn gọn, không chứa dấu.">
             <Input
               id="slug"
               required

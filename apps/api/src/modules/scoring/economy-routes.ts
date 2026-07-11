@@ -16,12 +16,6 @@ export async function economyRoutes(app: FastifyInstance) {
     async (request, reply) => {
       const { workspaceId } = request.params as { workspaceId: string };
       const input = adjustmentSchema.parse(request.body);
-      if (input.kind === 'manual' && !['owner', 'admin'].includes(request.workspaceRole!))
-        throw new ApiError(
-          403,
-          'FORBIDDEN',
-          'Manual adjustments require workspace admin permission',
-        );
       const entry = await transaction(async (client) => {
         const rule = await loadMutableRule(client, workspaceId);
         if (input.kind === 'speech' && input.medalDelta !== rule.adjustments.speech)
@@ -32,6 +26,8 @@ export async function economyRoutes(app: FastifyInstance) {
           );
         if (input.kind === 'violation' && !rule.adjustments.violations.includes(input.medalDelta))
           throw new ApiError(400, 'INVALID_ADJUSTMENT', 'Unsupported violation value');
+        if (input.kind === 'manual' && input.medalDelta === 0)
+          throw new ApiError(400, 'INVALID_ADJUSTMENT', 'Manual adjustment cannot be zero');
         const existing = await client.query<{
           team_id: string;
           medal_delta: number;

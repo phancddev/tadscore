@@ -1,7 +1,6 @@
 import { rankTeams, ruleDefinitionSchema } from '@tadscore/rule-engine';
 import { one, rows, type DbClient } from '../../lib/db.js';
 import { ApiError } from '../../lib/errors.js';
-import { camelize } from '../../lib/dto.js';
 
 export async function getRanking(workspaceId: string, client?: DbClient) {
   const workspace = await one<{ id: string; name: string; rule_snapshot: unknown; status: string }>(
@@ -62,25 +61,124 @@ export async function getRanking(workspaceId: string, client?: DbClient) {
   };
 }
 
+type LedgerRow = {
+  id: string;
+  entry_type: string;
+  medal_delta: number;
+  piece_delta: number;
+  item_delta: number;
+  created_at: Date;
+  reverses_entry_id: string | null;
+  activity_name: string | null;
+  reversed_at: Date | null;
+  activity_rank: number | null;
+  adjustment_kind: string | null;
+  note: string | null;
+  created_by_name?: string | null;
+  metadata?: Record<string, unknown> | null;
+};
+
+function buildTeamDetail(
+  team: Record<string, unknown>,
+  ledger: LedgerRow[],
+  options: { publicView: boolean },
+) {
+  const entries = ledger.map((row) => {
+    const base = {
+      id: row.id,
+      entryType: row.entry_type,
+      medalDelta: row.medal_delta,
+      pieceDelta: row.piece_delta,
+      itemDelta: row.item_delta,
+      createdAt: row.created_at,
+      reversesEntryId: row.reverses_entry_id,
+      activityName: row.activity_name,
+      reversedAt: row.reversed_at,
+      activityRank: row.activity_rank,
+      adjustmentKind: row.adjustment_kind,
+      note: row.note,
+    };
+    if (options.publicView) return base;
+    return {
+      ...base,
+      createdByName: row.created_by_name ?? null,
+      metadata: row.metadata ?? null,
+    };
+  });
+  const wins = entries
+    .filter(
+      (entry) =>
+        entry.entryType === 'activity_award' &&
+        entry.activityRank === 1 &&
+        !entry.reversedAt &&
+        !entry.reversesEntryId,
+    )
+    .map((entry) => ({
+      entryId: entry.id,
+      activityName: entry.activityName,
+      medals: entry.medalDelta,
+      pieces: entry.pieceDelta,
+      createdAt: entry.createdAt,
+    }));
+  const adjustments = entries.filter(
+    (entry) =>
+      ['adjustment', 'penalty'].includes(entry.entryType) &&
+      !entry.reversedAt &&
+      !entry.reversesEntryId,
+  );
+  return {
+    ...team,
+    wins,
+    winCount: wins.length,
+    totalMedalGain: entries
+      .filter((entry) => entry.medalDelta > 0 && !entry.reversedAt)
+      .reduce((sum, entry) => sum + entry.medalDelta, 0),
+    totalMedalLoss: entries
+      .filter((entry) => entry.medalDelta < 0 && !entry.reversedAt)
+      .reduce((sum, entry) => sum + entry.medalDelta, 0),
+    adjustmentCount: adjustments.length,
+    ledger: entries,
+  };
+}
+
 export async function getTeamDetail(workspaceId: string, teamId: string, client?: DbClient) {
   const ranking = await getRanking(workspaceId, client);
   const team = ranking.teams.find((item) => item.teamId === teamId);
   if (!team) throw new ApiError(404, 'NOT_FOUND', 'Team not found');
-  const ledger = await rows(
-    `SELECT l.id,l.entry_type,l.medal_delta,l.piece_delta,l.item_delta,l.metadata,l.created_at,l.reverses_entry_id,a.name activity_name,u.full_name created_by_name,r.created_at reversed_at FROM score_ledger l LEFT JOIN activities a ON a.id=l.activity_id JOIN users u ON u.id=l.created_by LEFT JOIN score_ledger r ON r.reverses_entry_id=l.id WHERE l.workspace_id=$1 AND l.team_id=$2 ORDER BY l.created_at DESC`,
+  const ledger = await rows<LedgerRow>(
+    `SELECT l.id,l.entry_type,l.medal_delta,l.piece_delta,l.item_delta,l.metadata,l.created_at,l.reverses_entry_id,
+      a.name activity_name,u.full_name created_by_name,r.created_at reversed_at,
+      NULLIF(l.metadata->>'rank','')::int activity_rank,
+      NULLIF(l.metadata->>'kind','') adjustment_kind,
+      NULLIF(l.metadata->>'reason','') note
+     FROM score_ledger l
+     LEFT JOIN activities a ON a.id=l.activity_id
+     JOIN users u ON u.id=l.created_by
+     LEFT JOIN score_ledger r ON r.reverses_entry_id=l.id
+     WHERE l.workspace_id=$1 AND l.team_id=$2
+     ORDER BY l.created_at DESC`,
     [workspaceId, teamId],
     client,
   );
-  return { ...team, ledger: camelize(ledger) };
+  return buildTeamDetail(team, ledger, { publicView: false });
 }
 
 export async function getPublicTeamDetail(workspaceId: string, teamId: string) {
   const ranking = await getRanking(workspaceId);
   const team = ranking.teams.find((item) => item.teamId === teamId);
   if (!team) throw new ApiError(404, 'NOT_FOUND', 'Team not found');
-  const ledger = await rows(
-    `SELECT l.id,l.entry_type,l.medal_delta,l.piece_delta,l.item_delta,l.created_at,l.reverses_entry_id,a.name activity_name,r.created_at reversed_at FROM score_ledger l LEFT JOIN activities a ON a.id=l.activity_id LEFT JOIN score_ledger r ON r.reverses_entry_id=l.id WHERE l.workspace_id=$1 AND l.team_id=$2 ORDER BY l.created_at DESC`,
+  const ledger = await rows<LedgerRow>(
+    `SELECT l.id,l.entry_type,l.medal_delta,l.piece_delta,l.item_delta,l.created_at,l.reverses_entry_id,
+      a.name activity_name,r.created_at reversed_at,
+      NULLIF(l.metadata->>'rank','')::int activity_rank,
+      NULLIF(l.metadata->>'kind','') adjustment_kind,
+      NULLIF(l.metadata->>'reason','') note
+     FROM score_ledger l
+     LEFT JOIN activities a ON a.id=l.activity_id
+     LEFT JOIN score_ledger r ON r.reverses_entry_id=l.id
+     WHERE l.workspace_id=$1 AND l.team_id=$2
+     ORDER BY l.created_at DESC`,
     [workspaceId, teamId],
   );
-  return { ...team, ledger: camelize(ledger) };
+  return buildTeamDetail(team, ledger, { publicView: true });
 }

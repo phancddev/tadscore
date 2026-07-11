@@ -2,7 +2,6 @@ import type { FastifyInstance } from 'fastify';
 import {
   createInvitationSchema,
   createWorkspaceSchema,
-  teamSchema,
   updateMemberSchema,
   updateWorkspaceSchema,
 } from '@tadscore/contracts';
@@ -15,8 +14,10 @@ import { hashToken, randomToken } from '../../lib/security.js';
 import { authenticate, requireWorkspaceRole } from '../auth/guards.js';
 import { ruleRegistry } from '../rules/registry.js';
 import { requireActiveWorkspace, workspaceDto } from './helpers.js';
+import { teamRoutes } from './team-routes.js';
 
 export async function workspaceRoutes(app: FastifyInstance) {
+  await teamRoutes(app);
   app.get('/', { preHandler: authenticate }, async (request) => {
     const data = await rows<Record<string, unknown>>(
       `SELECT w.*,m.role,(SELECT count(*) FROM workspace_members x WHERE x.workspace_id=w.id AND x.status='active') member_count FROM workspaces w JOIN workspace_members m ON m.workspace_id=w.id AND m.user_id=$1 AND m.status='active' WHERE w.status<>'suspended' ORDER BY w.created_at DESC`,
@@ -169,51 +170,6 @@ export async function workspaceRoutes(app: FastifyInstance) {
         throw new ApiError(404, 'NOT_FOUND', 'Active member not found or owner cannot be removed');
       await audit(request, 'workspace.member.remove', 'user', userId, { workspaceId });
       return reply.status(204).send();
-    },
-  );
-
-  app.get(
-    '/:workspaceId/teams',
-    { preHandler: requireWorkspaceRole('viewer') },
-    async (request) => ({
-      data: camelize(
-        await rows(
-          `SELECT t.id,t.code,t.name,t.display_name,t.color,t.icon,t.sort_order,t.is_active,COALESCE(sum(l.medal_delta),0)::int medals,COALESCE(sum(l.piece_delta),0)::int pieces,COALESCE(sum(l.item_delta),0)::int items FROM teams t LEFT JOIN score_ledger l ON l.workspace_id=t.workspace_id AND l.team_id=t.id WHERE t.workspace_id=$1 GROUP BY t.id ORDER BY t.sort_order,t.name`,
-          [(request.params as { workspaceId: string }).workspaceId],
-        ),
-      ),
-    }),
-  );
-  app.post(
-    '/:workspaceId/teams',
-    { preHandler: requireWorkspaceRole('admin') },
-    async (request, reply) => {
-      const { workspaceId } = request.params as { workspaceId: string };
-      const input = teamSchema.parse(request.body);
-      const capacity = await one<{ count: string; team_count: string; status: string }>(
-        `SELECT (SELECT count(*) FROM teams WHERE workspace_id=w.id AND is_active)::text count,(w.rule_snapshot->>'teamCount') team_count,w.status FROM workspaces w WHERE w.id=$1`,
-        [workspaceId],
-      );
-      if (!capacity || capacity.status !== 'active')
-        throw new ApiError(409, 'WORKSPACE_READ_ONLY', 'Only active workspaces can be changed');
-      if (Number(capacity.count) >= Number(capacity.team_count))
-        throw new ApiError(409, 'TEAM_LIMIT', 'This rule uses a fixed team count');
-      const team = await one(
-        'INSERT INTO teams(workspace_id,code,name,display_name,color,icon,sort_order) VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING *',
-        [
-          workspaceId,
-          input.code,
-          input.name,
-          input.displayName,
-          input.color ?? null,
-          input.icon ?? null,
-          input.sortOrder,
-        ],
-      );
-      await audit(request, 'workspace.team.create', 'team', String((team as { id?: string })?.id), {
-        workspaceId,
-      });
-      return reply.status(201).send({ data: camelize(team) });
     },
   );
 

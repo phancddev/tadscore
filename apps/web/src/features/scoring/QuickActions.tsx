@@ -1,5 +1,5 @@
-import { Gem, MessageCircleMore, Package, ShieldAlert } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { ArrowUpDown, Gem, Package } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import { Button } from '../../components/ui/Button';
 import {
   Card,
@@ -13,13 +13,15 @@ import { Input } from '../../components/ui/Input';
 import { Select } from '../../components/ui/Select';
 import { cn } from '../../lib/cn';
 import type { Team } from '../../lib/types';
+import { parseMedalDelta } from './parseMedalDelta';
 
 export type QuickAction = {
   teamId: string;
-  mode: 'speech' | 'violation' | 'piece' | 'item';
+  mode: 'manual' | 'piece' | 'item';
   value: number;
   reason: string;
 };
+
 export function QuickActions({
   teams,
   saving,
@@ -34,48 +36,58 @@ export function QuickActions({
   onPurchase: (data: QuickAction) => void;
 }) {
   const [teamId, setTeamId] = useState('');
-  const [mode, setMode] = useState<QuickAction['mode']>('speech');
-  const [value, setValue] = useState(1);
+  const [mode, setMode] = useState<QuickAction['mode']>('manual');
+  const [deltaText, setDeltaText] = useState('+1');
+  const [quantity, setQuantity] = useState(1);
   const [reason, setReason] = useState('');
   useEffect(() => {
     if (!teamId && teams[0]) setTeamId(teams[0].teamId);
   }, [teamId, teams]);
   const modes = [
-    { id: 'speech', label: 'Phát biểu', icon: MessageCircleMore },
-    { id: 'violation', label: 'Vi phạm', icon: ShieldAlert },
-    { id: 'piece', label: 'Mảnh ghép', icon: Gem },
-    { id: 'item', label: 'Vật phẩm', icon: Package },
-  ] as const;
+    { id: 'manual' as const, label: 'Cộng/trừ điểm', icon: ArrowUpDown },
+    { id: 'piece' as const, label: 'Mảnh ghép', icon: Gem },
+    { id: 'item' as const, label: 'Vật phẩm', icon: Package },
+  ];
+  const parsed = useMemo(
+    () => (mode === 'manual' ? parseMedalDelta(deltaText) : { ok: true as const, value: quantity }),
+    [deltaText, mode, quantity],
+  );
   const submit = () => {
-    const data = {
+    if (!teamId || !parsed.ok) return;
+    if (mode === 'manual') {
+      onQuick({
+        teamId,
+        mode,
+        value: parsed.value,
+        reason: reason.trim() || (parsed.value > 0 ? 'Cộng điểm thủ công' : 'Trừ điểm thủ công'),
+      });
+      return;
+    }
+    if (quantity < 1) return;
+    onPurchase({
       teamId,
       mode,
-      value,
-      reason:
-        reason.trim() ||
-        (mode === 'speech' ? 'Phát biểu' : mode === 'violation' ? 'Vi phạm' : 'Mua từ cửa hàng'),
-    };
-    if (mode === 'piece' || mode === 'item') onPurchase(data);
-    else onQuick(data);
+      value: quantity,
+      reason: reason.trim() || 'Mua từ cửa hàng',
+    });
   };
   return (
     <Card>
       <CardHeader>
         <CardTitle>Thao tác nhanh</CardTitle>
-        <CardDescription>Cộng phát biểu, trừ vi phạm hoặc mua trong cửa hàng.</CardDescription>
+        <CardDescription>
+          Nhập +5 / -2 để cộng trừ huy hiệu, hoặc mua mảnh ghép / vật phẩm. Tổng điểm có thể âm.
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <fieldset disabled={disabled} className="m-0 min-w-0 border-0 p-0">
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-3 gap-2">
             {modes.map(({ id, label, icon: Icon }) => (
               <button
                 type="button"
                 key={id}
                 aria-pressed={mode === id}
-                onClick={() => {
-                  setMode(id);
-                  setValue(1);
-                }}
+                onClick={() => setMode(id)}
                 className={cn(
                   'flex min-h-11 items-center justify-center gap-2 rounded-[var(--radius)] border px-2 text-sm font-medium transition-colors',
                   mode === id
@@ -102,65 +114,49 @@ export function QuickActions({
                 ))}
               </Select>
             </Field>
-            <Field
-              label={
-                mode === 'violation'
-                  ? 'Mức trừ'
-                  : mode === 'speech'
-                    ? 'Số huy hiệu cộng'
-                    : 'Số lượng'
-              }
-              htmlFor="quick-value"
-            >
-              {mode === 'violation' ? (
-                <div className="grid grid-cols-3 gap-2">
-                  {[1, 2, 5].map((number) => (
-                    <button
-                      type="button"
-                      key={number}
-                      onClick={() => setValue(number)}
-                      aria-pressed={value === number}
-                      className={cn(
-                        'min-h-11 rounded-[var(--radius)] border text-sm font-medium transition-colors',
-                        value === number
-                          ? 'border-[var(--border)] bg-[var(--muted)] text-[var(--foreground)]'
-                          : 'border-[var(--border)] bg-transparent text-[var(--muted-foreground)] hover:bg-[var(--muted)]/50',
-                      )}
-                    >
-                      −{number}
-                    </button>
-                  ))}
-                </div>
-              ) : mode === 'speech' ? (
-                <div
-                  id="quick-value"
-                  className="flex min-h-11 items-center rounded-[var(--radius)] border border-[var(--input)] bg-[var(--muted)]/40 px-3 py-2 text-sm text-[var(--muted-foreground)]"
-                  aria-readonly="true"
-                >
-                  +1 huy hiệu theo bộ luật
-                </div>
-              ) : (
+            {mode === 'manual' ? (
+              <Field
+                label="Mức thay đổi huy hiệu"
+                htmlFor="quick-delta"
+                error={!parsed.ok ? parsed.error : undefined}
+                hint="Ví dụ: +5, -2, 10. Cho phép tổng điểm âm."
+              >
+                <Input
+                  id="quick-delta"
+                  inputMode="text"
+                  autoComplete="off"
+                  placeholder="+5 hoặc -2"
+                  value={deltaText}
+                  onChange={(event) => setDeltaText(event.target.value)}
+                  aria-invalid={!parsed.ok}
+                />
+              </Field>
+            ) : (
+              <Field label="Số lượng" htmlFor="quick-value">
                 <Input
                   id="quick-value"
                   type="number"
                   min={1}
-                  value={value}
-                  onChange={(event) => setValue(Math.max(1, Number(event.target.value)))}
+                  max={100}
+                  value={quantity}
+                  onChange={(event) =>
+                    setQuantity(Math.max(1, Math.min(100, Number(event.target.value) || 1)))
+                  }
                 />
-              )}
-            </Field>
-            {(mode === 'speech' || mode === 'violation') && (
+              </Field>
+            )}
+            {mode === 'manual' && (
               <Field label="Lý do / ghi chú" htmlFor="quick-reason">
                 <Input
                   id="quick-reason"
                   value={reason}
                   onChange={(event) => setReason(event.target.value)}
-                  placeholder={mode === 'speech' ? 'Phát biểu' : 'Vi phạm'}
+                  placeholder="Ghi chú (tuỳ chọn)"
                 />
               </Field>
             )}
-            <Button loading={saving} disabled={!teamId} onClick={submit}>
-              {mode === 'piece' || mode === 'item' ? 'Xác nhận mua' : 'Ghi nhận'}
+            <Button loading={saving} disabled={!teamId || !parsed.ok} onClick={submit}>
+              {mode === 'manual' ? 'Ghi nhận điểm' : 'Xác nhận mua'}
             </Button>
           </div>
         </fieldset>
