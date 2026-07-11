@@ -172,8 +172,27 @@ export const api = {
     publicLinks: (id: string) => request<PublicLink[]>(`/workspaces/${id}/public-links`),
     createPublicLink: (
       id: string,
-      value: { label?: string; slug?: string; expiresInHours?: number },
+      value: {
+        label?: string;
+        slug?: string;
+        expiresInHours?: number;
+        isEnabled?: boolean;
+        tokenEnabled?: boolean;
+        slugEnabled?: boolean;
+      },
     ) => post<PublicLink>(`/workspaces/${id}/public-links`, value),
+    updatePublicLink: (
+      id: string,
+      linkId: string,
+      value: {
+        label?: string | null;
+        slug?: string | null;
+        isEnabled?: boolean;
+        tokenEnabled?: boolean;
+        slugEnabled?: boolean;
+        expiresInHours?: number | null;
+      },
+    ) => patch<PublicLink>(`/workspaces/${id}/public-links/${linkId}`, value),
     revokePublicLink: (id: string, linkId: string) =>
       del(`/workspaces/${id}/public-links/${linkId}`),
     regeneratePublicLink: (id: string, linkId: string) =>

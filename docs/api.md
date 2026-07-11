@@ -89,15 +89,24 @@ submission đó là idempotent, nhưng tái dùng key cho submission khác là c
 
 ## Public ranking
 
-| Method/path                                                | Mục đích         | Truy cập        |
-| ---------------------------------------------------------- | ---------------- | --------------- |
-| `GET /api/workspaces/:id/public-links`                     | List link        | `admin`         |
-| `POST /api/workspaces/:id/public-links`                    | Tạo token/URL    | `admin`         |
-| `DELETE /api/workspaces/:id/public-links/:linkId`          | Revoke           | `admin`         |
-| `POST /api/workspaces/:id/public-links/:linkId/regenerate` | Đổi token        | `admin`         |
-| `GET /api/public/rankings/:token`                          | Ranking snapshot | Public có token |
-| `GET /api/public/rankings/:token/teams/:teamId`            | Team breakdown   | Public có token |
-| `GET /api/public/rankings/:token/events`                   | SSE live update  | Public có token |
+Mỗi workspace có **tối đa một** public ranking link (create-once). Link random token và custom
+slug tồn tại song song; **public/private độc lập** qua `tokenEnabled` và `slugEnabled` (path private
+trả 404, path còn lại vẫn hoạt động).
+
+| Method/path                                                | Mục đích                                      | Truy cập        |
+| ---------------------------------------------------------- | --------------------------------------------- | --------------- |
+| `GET /api/workspaces/:id/public-links`                     | List (gồm token + url + slugUrl)              | `admin`         |
+| `POST /api/workspaces/:id/public-links`                    | Tạo một lần; nếu đã có thì trả link hiện tại  | `admin`         |
+| `PATCH /api/workspaces/:id/public-links/:linkId`           | Cập nhật slug / label / public-private        | `admin`         |
+| `DELETE /api/workspaces/:id/public-links/:linkId`          | Revoke (private + revoked)                    | `admin`         |
+| `POST /api/workspaces/:id/public-links/:linkId/regenerate` | Đổi random token (slug giữ nguyên)            | `admin`         |
+| `GET /api/public/rankings/:key`                            | Ranking snapshot (`token` **hoặc** `slug`)    | Public nếu bật  |
+| `GET /api/public/rankings/:key/teams/:teamId`              | Team breakdown                                | Public nếu bật  |
+| `GET /api/public/rankings/:key/events`                     | SSE live update                               | Public nếu bật  |
+
+Body tạo: `{ slug?, label?, expiresInHours?, isEnabled?, tokenEnabled?, slugEnabled? }`
+(`isEnabled` gán cả hai path). Body PATCH: `{ slug?, label?, isEnabled?, tokenEnabled?,
+slugEnabled?, expiresInHours? }` (`null` xóa slug/label/expiry).
 
 SSE gửi event tên `ranking` và heartbeat comment. Frontend nhận event rồi refetch snapshot thay vì
 coi payload SSE là state duy nhất. Client phải tự reconnect; proxy phải tắt buffering.

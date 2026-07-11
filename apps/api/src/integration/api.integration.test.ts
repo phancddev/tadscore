@@ -217,9 +217,27 @@ describeIf.sequential('API integration', () => {
         .medals,
     ).toBe(0);
 
-    const publicLink = await post(`${base}/public-links`, { label: 'public' }, ownerCookie);
+    const publicSlug = `pub-${Date.now().toString(36)}`;
+    const publicLink = await post(
+      `${base}/public-links`,
+      { label: 'public', slug: publicSlug },
+      ownerCookie,
+    );
+    expect(publicLink.statusCode).toBe(201);
     const publicToken = publicLink.json().data.token as string;
+    const publicLinkId = publicLink.json().data.id as string;
+    expect(publicLink.json().data.slugUrl).toBe(`/ranking/${publicSlug}`);
+    // Create-once: second POST returns the same link (does not insert another row).
+    const again = await post(`${base}/public-links`, { label: 'ignored' }, ownerCookie);
+    expect(again.statusCode).toBe(200);
+    expect(again.json().data.id).toBe(publicLinkId);
+    expect(again.json().data.token).toBe(publicToken);
+    // Token is re-displayed on list without regenerate.
+    const listed = await request('GET', `${base}/public-links`, undefined, ownerCookie);
+    expect(listed.json().data).toHaveLength(1);
+    expect(listed.json().data[0].token).toBe(publicToken);
     expect((await request('GET', `/api/public/rankings/${publicToken}`)).statusCode).toBe(200);
+    expect((await request('GET', `/api/public/rankings/${publicSlug}`)).statusCode).toBe(200);
     const publicTeam = await request('GET', `/api/public/rankings/${publicToken}/teams/${teamId}`);
     expect(publicTeam.statusCode).toBe(200);
     expect(Array.isArray(publicTeam.json().data.wins)).toBe(true);
@@ -227,17 +245,66 @@ describeIf.sequential('API integration', () => {
     expect(JSON.stringify(publicTeam.json())).not.toMatch(
       /createdByName|"metadata"|@example\.test/,
     );
+    // Independent visibility: token private keeps slug public, and vice versa.
+    expect(
+      (
+        await request(
+          'PATCH',
+          `${base}/public-links/${publicLinkId}`,
+          { tokenEnabled: false },
+          ownerCookie,
+        )
+      ).statusCode,
+    ).toBe(200);
+    expect((await request('GET', `/api/public/rankings/${publicToken}`)).statusCode).toBe(404);
+    expect((await request('GET', `/api/public/rankings/${publicSlug}`)).statusCode).toBe(200);
+    expect(
+      (
+        await request(
+          'PATCH',
+          `${base}/public-links/${publicLinkId}`,
+          { tokenEnabled: true, slugEnabled: false },
+          ownerCookie,
+        )
+      ).statusCode,
+    ).toBe(200);
+    expect((await request('GET', `/api/public/rankings/${publicToken}`)).statusCode).toBe(200);
+    expect((await request('GET', `/api/public/rankings/${publicSlug}`)).statusCode).toBe(404);
+    expect(
+      (
+        await request(
+          'PATCH',
+          `${base}/public-links/${publicLinkId}`,
+          { slugEnabled: true },
+          ownerCookie,
+        )
+      ).statusCode,
+    ).toBe(200);
+    expect((await request('GET', `/api/public/rankings/${publicSlug}`)).statusCode).toBe(200);
+    const regenerated = await post(
+      `${base}/public-links/${publicLinkId}/regenerate`,
+      {},
+      ownerCookie,
+    );
+    expect(regenerated.statusCode).toBe(200);
+    const newToken = regenerated.json().data.token as string;
+    expect(newToken).not.toBe(publicToken);
+    expect(regenerated.json().data.slug).toBe(publicSlug);
+    expect((await request('GET', `/api/public/rankings/${publicToken}`)).statusCode).toBe(404);
+    expect((await request('GET', `/api/public/rankings/${newToken}`)).statusCode).toBe(200);
+    expect((await request('GET', `/api/public/rankings/${publicSlug}`)).statusCode).toBe(200);
     expect(
       (
         await request(
           'DELETE',
-          `${base}/public-links/${publicLink.json().data.id}`,
+          `${base}/public-links/${publicLinkId}`,
           undefined,
           ownerCookie,
         )
       ).statusCode,
     ).toBe(204);
-    expect((await request('GET', `/api/public/rankings/${publicToken}`)).statusCode).toBe(404);
+    expect((await request('GET', `/api/public/rankings/${newToken}`)).statusCode).toBe(404);
+    expect((await request('GET', `/api/public/rankings/${publicSlug}`)).statusCode).toBe(404);
 
     const secondGame = await post(
       `${base}/games`,

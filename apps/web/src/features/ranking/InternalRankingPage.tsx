@@ -1,25 +1,31 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Copy, ExternalLink, Link2Off, RefreshCcw } from 'lucide-react';
+import { Link2 } from 'lucide-react';
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Alert } from '../../components/ui/Alert';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
+import { Field } from '../../components/ui/Field';
+import { Input } from '../../components/ui/Input';
 import { Modal } from '../../components/ui/Modal';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { EmptyState, ErrorState, LoadingState } from '../../components/ui/State';
 import { useToast } from '../../components/ui/Toast';
 import { api } from '../../lib/api';
-import type { PublicLink, Team, TeamDetail } from '../../lib/types';
+import type { Team, TeamDetail } from '../../lib/types';
 import { Leaderboard } from './Leaderboard';
+import { PublicLinkCard } from './PublicLinkCard';
 import { TeamDetailView } from './TeamDetailView';
+
+const SLUG_RE = /^[a-z0-9][a-z0-9-]{2,79}$/;
 
 export function InternalRankingPage() {
   const { workspaceId = '' } = useParams();
   const toast = useToast();
   const client = useQueryClient();
-  const [created, setCreated] = useState<Record<string, string>>({});
   const [team, setTeam] = useState<Team>();
+  const [slugDraft, setSlugDraft] = useState('');
+  const [useCustomSlug, setUseCustomSlug] = useState(false);
   const workspace = useQuery({
     queryKey: ['workspace', workspaceId],
     queryFn: () => api.workspaces.get(workspaceId),
@@ -38,13 +44,25 @@ export function InternalRankingPage() {
     queryFn: () => api.scoring.teamDetail(workspaceId, team!.teamId),
     enabled: !!team,
   });
+  const refreshLinks = () => client.invalidateQueries({ queryKey: ['public-links', workspaceId] });
   const create = useMutation({
-    mutationFn: () => api.workspaces.createPublicLink(workspaceId, { label: 'Bảng xếp hạng' }),
-    onSuccess: (link) => {
-      if (link.token) setCreated((current) => ({ ...current, [link.id]: link.token! }));
-      client.invalidateQueries({ queryKey: ['public-links', workspaceId] });
+    mutationFn: () => {
+      const slug = useCustomSlug ? slugDraft.trim().toLowerCase() : undefined;
+      if (slug && !SLUG_RE.test(slug))
+        throw new Error('Slug không hợp lệ (a-z, 0-9, dấu -, 3–80 ký tự)');
+      return api.workspaces.createPublicLink(workspaceId, {
+        label: 'Bảng xếp hạng',
+        slug,
+        isEnabled: true,
+      });
+    },
+    onSuccess: () => {
+      refreshLinks();
+      setSlugDraft('');
+      setUseCustomSlug(false);
       toast('Đã tạo link public');
     },
+    onError: (error: Error) => toast(error.message || 'Không tạo được link'),
   });
   if (workspace.isLoading || ranking.isLoading)
     return (
@@ -60,22 +78,16 @@ export function InternalRankingPage() {
     );
   const roleCanManage = ['owner', 'admin'].includes(workspace.data?.role || '');
   const canManage = roleCanManage && workspace.data?.status === 'active';
+  const existing = links.data?.[0];
   return (
     <div className="page-shell">
       <PageHeader
         title="Bảng xếp hạng"
         description="Chọn một đội để xem chi tiết các giao dịch điểm."
-        actions={
-          canManage ? (
-            <Button loading={create.isPending} onClick={() => create.mutate()}>
-              Tạo link public
-            </Button>
-          ) : undefined
-        }
       />
       {roleCanManage && !canManage && (
         <Alert variant="warning" className="mb-5" role="status">
-          Workspace đang {workspace.data?.status}; link public hiện chỉ đọc và không thể tạo mới.
+          Workspace đang {workspace.data?.status}; link public hiện chỉ đọc và không thể chỉnh sửa.
         </Alert>
       )}
       <Leaderboard ranking={ranking.data} onTeam={setTeam} />
@@ -84,27 +96,52 @@ export function InternalRankingPage() {
           <h2 className="mb-3 text-sm font-semibold">Link public</h2>
           {links.isLoading ? (
             <LoadingState rows={1} />
-          ) : !links.data?.length ? (
-            <EmptyState
-              title="Chưa có link public"
-              message="Tạo link để khách xem ranking không cần đăng nhập."
+          ) : links.isError ? (
+            <ErrorState retry={() => links.refetch()} />
+          ) : existing ? (
+            <PublicLinkCard
+              link={existing}
+              workspaceId={workspaceId}
+              readOnly={!canManage}
+              onRefresh={refreshLinks}
             />
           ) : (
-            <div className="grid gap-3">
-              {links.data.map((link) => (
-                <PublicLinkRow
-                  key={link.id}
-                  link={link}
-                  token={created[link.id]}
-                  workspaceId={workspaceId}
-                  onToken={(token) => setCreated((current) => ({ ...current, [link.id]: token }))}
-                  onRefresh={() =>
-                    client.invalidateQueries({ queryKey: ['public-links', workspaceId] })
-                  }
-                  readOnly={!canManage}
-                />
-              ))}
-            </div>
+            <Card className="grid gap-4 p-4">
+              <EmptyState
+                title="Chưa có link public"
+                message="Tạo một lần — sau đó bật/tắt public hoặc custom slug mà không cần regenerate."
+              />
+              {canManage && (
+                <>
+                  <label className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={useCustomSlug}
+                      onChange={(event) => setUseCustomSlug(event.target.checked)}
+                    />
+                    Dùng custom slug (song song với link random)
+                  </label>
+                  {useCustomSlug && (
+                    <Field label="Custom slug" htmlFor="public-slug">
+                      <Input
+                        id="public-slug"
+                        placeholder="vd: hoh-2026"
+                        value={slugDraft}
+                        onChange={(event) => setSlugDraft(event.target.value.toLowerCase())}
+                      />
+                    </Field>
+                  )}
+                  <Button
+                    className="justify-self-start"
+                    loading={create.isPending}
+                    onClick={() => create.mutate()}
+                  >
+                    <Link2 className="h-4 w-4" />
+                    Tạo link public
+                  </Button>
+                </>
+              )}
+            </Card>
           )}
         </section>
       )}
@@ -122,88 +159,5 @@ export function InternalRankingPage() {
         ) : null}
       </Modal>
     </div>
-  );
-}
-
-function PublicLinkRow({
-  link,
-  token,
-  workspaceId,
-  onToken,
-  onRefresh,
-  readOnly,
-}: {
-  link: PublicLink;
-  token?: string;
-  workspaceId: string;
-  onToken: (token: string) => void;
-  onRefresh: () => void;
-  readOnly: boolean;
-}) {
-  const toast = useToast();
-  const url = token ? `${location.origin}/ranking/${token}` : '';
-  return (
-    <Card className="flex flex-wrap items-center gap-3 p-4">
-      <div className="min-w-0 flex-1">
-        <p className="m-0 text-sm font-medium">{link.label || 'Bảng xếp hạng'}</p>
-        <p className="m-0 mt-0.5 text-sm text-[var(--muted-foreground)]">
-          {link.isEnabled ? 'Đang hoạt động' : 'Đã thu hồi'}
-          {link.expiresAt
-            ? ` · hết hạn ${new Date(link.expiresAt).toLocaleString('vi-VN')}`
-            : ' · không hết hạn'}
-        </p>
-      </div>
-      {!readOnly && url && (
-        <>
-          <Button
-            variant="secondary"
-            onClick={async () => {
-              await navigator.clipboard.writeText(url);
-              toast('Đã sao chép link');
-            }}
-          >
-            <Copy className="h-4 w-4" />
-            Sao chép
-          </Button>
-          <a
-            className="inline-flex min-h-11 items-center gap-2 rounded-[var(--radius)] border border-[var(--border)] px-4 text-sm font-medium hover:bg-[var(--muted)]"
-            href={url}
-            target="_blank"
-            rel="noreferrer"
-          >
-            <ExternalLink className="h-4 w-4" />
-            Mở
-          </a>
-        </>
-      )}
-      {!readOnly && (
-        <Button
-          variant="ghost"
-          onClick={async () => {
-            const result = await api.workspaces.regeneratePublicLink(workspaceId, link.id);
-            if (result.token) onToken(result.token);
-            onRefresh();
-          }}
-        >
-          <RefreshCcw className="h-4 w-4" />
-          {url ? 'Đổi token' : 'Lấy link mới'}
-        </Button>
-      )}
-      {!readOnly && link.isEnabled && (
-        <Button
-          variant="ghost"
-          className="text-[var(--destructive)]"
-          onClick={async () => {
-            if (confirm('Thu hồi link public này?')) {
-              await api.workspaces.revokePublicLink(workspaceId, link.id);
-              onRefresh();
-            }
-          }}
-        >
-          <Link2Off className="h-4 w-4" />
-          Thu hồi
-        </Button>
-      )}
-    </Card>
   );
 }

@@ -88,7 +88,11 @@ request; super admin có thể xem và retry email lỗi.
 
 ## Public ranking và SSE
 
-Public link lưu hash token, có thể expire, revoke hoặc regenerate. Người xem không cần account.
+Mỗi workspace có tối đa một public ranking link. Random token (hiển thị lại được sau khi tạo) và
+custom slug tồn tại song song; `token_enabled` / `slug_enabled` bật-tắt public/private **độc lập**
+cho từng path (path private trả 404). Token vẫn được hash để tương thích legacy; bản ghi mới lưu
+thêm plaintext path token để admin copy lại mà không regenerate. Link có thể expire, revoke, hoặc
+regenerate (đổi token, giữ slug và visibility từng path).
 React tải snapshot ranking bằng HTTP rồi mở SSE tại
 `/api/public/rankings/:token/events`. Nginx tắt proxy buffering/cache và giữ kết nối dài; khi có
 event `ranking`, client refetch snapshot mới.

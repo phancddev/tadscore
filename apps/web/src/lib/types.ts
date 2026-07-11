@@ -125,14 +125,17 @@ export type Invitation = {
 };
 export type PublicLink = {
   id: string;
+  token?: string | null;
   slug?: string | null;
   label?: string | null;
   isEnabled: boolean;
+  tokenEnabled: boolean;
+  slugEnabled: boolean;
   expiresAt?: string | null;
   createdAt?: string;
   lastAccessedAt?: string | null;
-  token?: string;
-  url?: string;
+  url?: string | null;
+  slugUrl?: string | null;
 };
 export type LedgerEntry = {
   id: string;
