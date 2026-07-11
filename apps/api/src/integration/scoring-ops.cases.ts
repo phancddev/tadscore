@@ -47,20 +47,53 @@ export async function runScoringOpsCases(ctx: Ctx) {
       )
     ).statusCode,
   ).toBe(403);
+  const manualMinus = await adjust(
+    {
+      teamId,
+      kind: 'manual',
+      medalDelta: -2,
+      reason: 'manual minus',
+      idempotencyKey: 'scorer-manual-minus',
+    },
+    scorerCookie,
+  );
+  expect(manualMinus.statusCode).toBe(201);
+  const manualMinusId = manualMinus.json().data.id as string;
   expect(
     (
-      await adjust(
-        {
-          teamId,
-          kind: 'manual',
-          medalDelta: -2,
-          reason: 'manual minus',
-          idempotencyKey: 'scorer-manual-minus',
-        },
-        scorerCookie,
+      await request(
+        'PATCH',
+        `${base}/ledger/${manualMinusId}`,
+        { medalDelta: 5, reason: 'flipped to plus' },
+        viewerCookie,
       )
     ).statusCode,
-  ).toBe(201);
+  ).toBe(403);
+  const scorerEdit = await request(
+    'PATCH',
+    `${base}/ledger/${manualMinusId}`,
+    { medalDelta: 5, reason: 'flipped to plus' },
+    scorerCookie,
+  );
+  expect(scorerEdit.statusCode).toBe(200);
+  expect(scorerEdit.json().data.medalDelta).toBe(5);
+  expect(scorerEdit.json().data.metadata.reason).toBe('flipped to plus');
+  // Flip + → − and restore the original −2 so later purchase/ranking math still holds.
+  const adminEdit = await request(
+    'PATCH',
+    `${base}/ledger/${manualMinusId}`,
+    { medalDelta: -2, reason: 'admin fix minus' },
+    adminCookie,
+  );
+  expect(adminEdit.statusCode).toBe(200);
+  expect(adminEdit.json().data.medalDelta).toBe(-2);
+  expect(adminEdit.json().data.metadata.reason).toBe('admin fix minus');
+  const ledgerAfterEdit = await request('GET', `${base}/ledger`, undefined, viewerCookie);
+  const editedRow = ledgerAfterEdit
+    .json()
+    .data.items.find((item: { id: string }) => item.id === manualMinusId);
+  expect(editedRow?.medalDelta).toBe(-2);
+  expect(editedRow?.metadata?.reason).toBe('admin fix minus');
   expect(
     (
       await adjust(

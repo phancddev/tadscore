@@ -4,6 +4,7 @@ import { camelize } from '../../lib/dto.js';
 import { requireWorkspaceRole } from '../auth/guards.js';
 import { economyRoutes } from './economy-routes.js';
 import { gameRoutes } from './game-routes.js';
+import { ledgerEditRoutes } from './ledger-edit-routes.js';
 import { getRanking, getTeamDetail } from './ranking.js';
 
 export async function scoringRoutes(app: FastifyInstance) {
@@ -79,4 +80,5 @@ export async function scoringRoutes(app: FastifyInstance) {
   );
   await app.register(gameRoutes);
   await app.register(economyRoutes);
+  await app.register(ledgerEditRoutes);
 }

@@ -32,6 +32,16 @@ export const reversalSchema = z.object({
   reason: z.string().trim().min(2).max(500),
   idempotencyKey: idempotencySchema,
 });
+/** In-place edit of adjustment/penalty reason and medal delta (not score history rewrite via reversal). */
+export const updateLedgerEntrySchema = z.object({
+  medalDelta: z
+    .number()
+    .int()
+    .min(-100000)
+    .max(100000)
+    .refine((value) => value !== 0, 'Adjustment cannot be zero'),
+  reason: z.string().trim().min(2).max(500),
+});
 
 export const createPublicLinkSchema = z.object({
   slug: slugSchema.optional(),

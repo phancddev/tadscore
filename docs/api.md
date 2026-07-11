@@ -56,18 +56,19 @@ share vĩnh viễn cho quyền edit. Owner không được cấp qua invitation.
 
 Prefix: `/api/workspaces/:workspaceId`.
 
-| Method/path suffix                  | Mục đích                                   | Quyền    |
-| ----------------------------------- | ------------------------------------------ | -------- |
-| `GET /activities`                   | Danh sách activity                         | `viewer` |
-| `GET /ranking`                      | Ranking nội bộ (+ shop/limits từ snapshot) | `viewer` |
-| `GET /ranking/:teamId`              | Breakdown team                             | `viewer` |
-| `GET /ledger`                       | Audit scoring có filter/pagination         | `viewer` |
-| `POST /games`                       | Submit đủ kết quả rank của game            | `scorer` |
-| `POST /games/:submissionId/reverse` | Reverse toàn submission                    | `admin`  |
-| `POST /adjustments`                 | Speech/violation/adjustment                | `scorer` |
-| `POST /purchases`                   | Mua mảnh/vật phẩm                          | `scorer` |
-| `POST /ledger/:entryId/reverse`     | Reverse một entry hợp lệ                   | `admin`  |
-| `GET /export.json`                  | Export ranking + ledger                    | `viewer` |
+| Method/path suffix                  | Mục đích                                      | Quyền    |
+| ----------------------------------- | --------------------------------------------- | -------- |
+| `GET /activities`                   | Danh sách activity                            | `viewer` |
+| `GET /ranking`                      | Ranking nội bộ (+ shop/limits từ snapshot)    | `viewer` |
+| `GET /ranking/:teamId`              | Breakdown team                                | `viewer` |
+| `GET /ledger`                       | Audit scoring có filter/pagination            | `viewer` |
+| `POST /games`                       | Submit đủ kết quả rank của game               | `scorer` |
+| `POST /games/:submissionId/reverse` | Reverse toàn submission                       | `admin`  |
+| `POST /adjustments`                 | Speech/violation/adjustment                   | `scorer` |
+| `POST /purchases`                   | Mua mảnh/vật phẩm                             | `scorer` |
+| `PATCH /ledger/:entryId`            | Sửa medal delta + reason (adjustment/penalty) | `scorer` |
+| `POST /ledger/:entryId/reverse`     | Reverse một entry hợp lệ                      | `admin`  |
+| `GET /export.json`                  | Export ranking + ledger                       | `viewer` |
 
 ### Idempotency
 
@@ -89,6 +90,13 @@ bịa giá/limit; mọi purchase/adjustment vẫn enforce server-side trên snap
 Request phải gửi đúng một kết quả cho mỗi team active và rank là hoán vị `1..N`. API lấy award từ
 rule snapshot của workspace, không tin medal/piece do client gửi. Transaction chỉ commit khi toàn
 bộ submission, activity result và ledger entry đều hợp lệ.
+
+### Edit adjustment / penalty
+
+`PATCH /ledger/:entryId` cho phép `scorer` (và `admin`/`owner`) sửa **in-place** `medalDelta` và
+`reason` của entry `adjustment` hoặc `penalty` chưa bị reverse. Có thể đổi dấu (+ ↔ −). Không áp
+dụng cho purchase, activity award hay entry đã reverse. Thay đổi điểm phát ranking update; mọi lần
+sửa ghi `audit_logs` (`score.ledger.update`).
 
 ### Reversal
 

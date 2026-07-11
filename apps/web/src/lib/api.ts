@@ -233,6 +233,11 @@ export const api = {
     ) => post(`/workspaces/${id}/purchases`, value),
     ledger: async (id: string) =>
       (await request<List<LedgerEntry>>(`/workspaces/${id}/ledger`)).items,
+    updateLedgerEntry: (
+      id: string,
+      entryId: string,
+      value: { medalDelta: number; reason: string },
+    ) => patch<LedgerEntry>(`/workspaces/${id}/ledger/${entryId}`, value),
     reverse: (id: string, entryId: string, reason: string) =>
       post<LedgerEntry>(`/workspaces/${id}/ledger/${entryId}/reverse`, {
         reason,
