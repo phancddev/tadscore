@@ -9,7 +9,7 @@ import { ErrorState, LoadingState } from '../../components/ui/State';
 import { useToast } from '../../components/ui/Toast';
 import { api } from '../../lib/api';
 import { createIdempotencyKey } from '../../lib/idempotency';
-import { QuickActions, type QuickAction } from './QuickActions';
+import { QuickActions, shopConfigFromRanking, type QuickAction } from './QuickActions';
 import { RankEntry } from './RankEntry';
 
 export function ScorePage() {
@@ -68,7 +68,12 @@ export function ScorePage() {
         reason: data.reason,
         idempotencyKey: createIdempotencyKey(),
       }),
-    onSuccess: () => success('Đã ghi nhận thay đổi'),
+    onSuccess: (_result, data) =>
+      success(
+        data.value > 0
+          ? `Đã cộng ${data.value} huy hiệu`
+          : `Đã trừ ${Math.abs(data.value)} huy hiệu`,
+      ),
   });
   const purchase = useMutation({
     mutationFn: (data: QuickAction) =>
@@ -78,7 +83,10 @@ export function ScorePage() {
         quantity: data.value,
         idempotencyKey: createIdempotencyKey(),
       }),
-    onSuccess: () => success('Đã ghi nhận giao dịch'),
+    onSuccess: (_result, data) =>
+      success(
+        data.mode === 'piece' ? `Đã mua ${data.value} mảnh ghép` : `Đã mua ${data.value} vật phẩm`,
+      ),
   });
   if (workspace.isLoading || ranking.isLoading || activities.isLoading)
     return (
@@ -86,7 +94,7 @@ export function ScorePage() {
         <LoadingState />
       </div>
     );
-  if (workspace.isError || ranking.isError || activities.isError)
+  if (workspace.isError || ranking.isError || activities.isError || !ranking.data)
     return (
       <div className="page-shell">
         <ErrorState
@@ -105,6 +113,7 @@ export function ScorePage() {
     workspace.data?.status !== 'active'
       ? `Workspace đang ${workspace.data?.status}; mọi thao tác chấm điểm đã tắt.`
       : 'Bạn chỉ có quyền xem workspace này.';
+  const shop = shopConfigFromRanking(ranking.data);
   return (
     <div className="page-shell">
       <PageHeader
@@ -144,14 +153,16 @@ export function ScorePage() {
       )}
       <div className="grid gap-5 xl:grid-cols-[1.25fr_.75fr]">
         <RankEntry
-          teams={ranking.data?.teams || []}
+          teams={ranking.data.teams}
           activities={activities.data || []}
           saving={game.isPending}
           disabled={!canScore || !online}
           onSubmit={(activityKey, ranks) => game.mutate({ activityKey, ranks })}
         />
         <QuickActions
-          teams={ranking.data?.teams || []}
+          teams={ranking.data.teams}
+          shop={shop}
+          shopReady
           saving={quick.isPending || purchase.isPending}
           disabled={!canScore || !online}
           onQuick={(data) => quick.mutate(data)}

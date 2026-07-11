@@ -11,6 +11,7 @@ export async function getRanking(workspaceId: string, client?: DbClient) {
   if (!workspace || workspace.status === 'suspended')
     throw new ApiError(404, 'NOT_FOUND', 'Ranking not found');
   const rule = ruleDefinitionSchema.parse(workspace.rule_snapshot);
+  const pieceLimit = rule.constraints.purchasePieceLimitBeforeActivity;
   const balances = await rows<{
     team_id: string;
     name: string;
@@ -20,8 +21,25 @@ export async function getRanking(workspaceId: string, client?: DbClient) {
     medals: string;
     pieces: string;
     items: string;
+    shop_pieces_bought: string;
   }>(
-    `SELECT t.id team_id,t.name,t.display_name,t.color,t.icon,COALESCE(SUM(l.medal_delta),0)::text medals,COALESCE(SUM(l.piece_delta),0)::text pieces,COALESCE(SUM(l.item_delta),0)::text items FROM teams t LEFT JOIN score_ledger l ON l.team_id=t.id AND l.workspace_id=t.workspace_id WHERE t.workspace_id=$1 AND t.is_active GROUP BY t.id ORDER BY t.sort_order,t.name`,
+    `SELECT t.id team_id,t.name,t.display_name,t.color,t.icon,
+      COALESCE(SUM(l.medal_delta),0)::text medals,
+      COALESCE(SUM(l.piece_delta),0)::text pieces,
+      COALESCE(SUM(l.item_delta),0)::text items,
+      COALESCE((
+        SELECT SUM(p.quantity)
+        FROM purchases p
+        WHERE p.workspace_id=t.workspace_id
+          AND p.team_id=t.id
+          AND p.item_key='piece'
+          AND p.status='completed'
+      ),0)::text shop_pieces_bought
+     FROM teams t
+     LEFT JOIN score_ledger l ON l.team_id=t.id AND l.workspace_id=t.workspace_id
+     WHERE t.workspace_id=$1 AND t.is_active
+     GROUP BY t.id
+     ORDER BY t.sort_order,t.name`,
     [workspaceId],
     client,
   );
@@ -41,6 +59,15 @@ export async function getRanking(workspaceId: string, client?: DbClient) {
     [workspaceId],
     client,
   );
+  const limitGate = await one<{ finalized: boolean }>(
+    `SELECT EXISTS(
+       SELECT 1 FROM activities
+       WHERE workspace_id=$1 AND activity_key=$2 AND status='finalized'
+     ) AS finalized`,
+    [workspaceId, pieceLimit.activityKey],
+    client,
+  );
+  const pieceLimitActive = !limitGate?.finalized;
   return {
     workspace: { id: workspace.id, name: workspace.name },
     workspaceName: workspace.name,
@@ -50,14 +77,29 @@ export async function getRanking(workspaceId: string, client?: DbClient) {
       name: rule.name,
       minimumPieces: rule.ranking.minimumPieces,
     },
+    /** Shop prices/limits from workspace rule_snapshot (not live registry). */
+    shop: {
+      piece: rule.shop.piece,
+      item: rule.shop.item,
+      minimumPieces: rule.ranking.minimumPieces,
+      pieceLimit: {
+        activityKey: pieceLimit.activityKey,
+        max: pieceLimit.max,
+        active: pieceLimitActive,
+      },
+    },
     ruleName: rule.name,
     updatedAt: updated?.updated_at ?? null,
-    teams: ranked.map((team) => ({
-      ...team,
-      displayName: metadata.get(team.teamId)?.display_name,
-      color: metadata.get(team.teamId)?.color,
-      icon: metadata.get(team.teamId)?.icon,
-    })),
+    teams: ranked.map((team) => {
+      const meta = metadata.get(team.teamId);
+      return {
+        ...team,
+        displayName: meta?.display_name,
+        color: meta?.color,
+        icon: meta?.icon,
+        shopPiecesBought: Number(meta?.shop_pieces_bought ?? 0),
+      };
+    }),
   };
 }
 

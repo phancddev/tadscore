@@ -14,6 +14,12 @@ export type User = {
   emailVerifiedAt?: string | null;
   pendingEmail?: string | null;
 };
+export type ShopItem = {
+  medalCost: number;
+  medalDelta: number;
+  pieceDelta: number;
+  itemDelta: number;
+};
 export type Rule = {
   id: string;
   version: string;
@@ -24,6 +30,19 @@ export type Rule = {
   healthy?: boolean;
   ok?: boolean;
   error?: string;
+  shop?: {
+    piece?: ShopItem;
+    item?: ShopItem;
+  };
+  ranking?: {
+    minimumPieces: number;
+  };
+  constraints?: {
+    purchasePieceLimitBeforeActivity?: {
+      activityKey: string;
+      max: number;
+    };
+  };
 };
 export type Workspace = {
   id: string;
@@ -51,6 +70,8 @@ export type Team = {
   items: number;
   eligible: boolean;
   rank: number;
+  /** Completed shop purchases of item_key=piece (for pre-activity limit). */
+  shopPiecesBought?: number;
 };
 export type ManagedTeam = {
   id: string;
@@ -132,9 +153,22 @@ export type LedgerEntry = {
   reversed?: boolean;
   reversedAt?: string | null;
 };
+export type RankingShop = {
+  piece?: ShopItem;
+  item?: ShopItem;
+  minimumPieces: number;
+  pieceLimit?: {
+    activityKey: string;
+    max: number;
+    /** True while the gate activity is not finalized (backend still enforces max). */
+    active: boolean;
+  };
+};
 export type Ranking = {
   workspace: { id: string; name: string };
   rule: { id: string; version: string; minimumPieces: number };
+  /** Economy config from workspace rule_snapshot (not live rule registry). */
+  shop?: RankingShop;
   teams: Team[];
 };
 export type TeamDetail = Team & {
