@@ -74,7 +74,14 @@
     "replaceHint": "Đổi hạng rồi cập nhật. Điểm cũ của game được đảo tự động.",
     "loadingResults": "Đang tải hạng đã lưu…",
     "replaceReason": "Sửa xếp hạng game",
-    "unassigned": "Chưa gán"
+    "unassigned": "Chưa gán",
+    "previewTitle": "Điểm thưởng dự kiến",
+    "previewTeam": "Đội",
+    "previewPlace": "Hạng",
+    "previewMedals": "{{label}} (HH)",
+    "previewPieces": "{{label}}",
+    "previewPartial": "Chỉ xem các hạng đã gán — gán đủ hạng trước khi lưu.",
+    "previewReplaceHint": "Đây là điểm thưởng mới; điểm cũ của game sẽ bị đảo trước."
   },
   "ledger": {
     "title": "Lịch sử điểm",
@@ -98,8 +105,8 @@
     "updated": "Đã cập nhật điều chỉnh",
     "reverse": "Đảo ngược",
     "reverseAria": "Đảo ngược giao dịch của {{team}}",
-    "reasonPrompt": "Lý do đảo ngược?",
-    "reversed": "Đã tạo giao dịch đảo ngược"
+    "reversed": "Đã tạo giao dịch đảo ngược",
+    "confirmReverse": "Đảo ngược giao dịch của {{team}}? Hệ thống sẽ tạo dòng đối dấu và không thể hoàn tác từ đây."
   },
   "parseDelta": {
     "empty": "Nhập mức thay đổi, ví dụ +5 hoặc -2",

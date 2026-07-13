@@ -256,7 +256,7 @@ export const api = {
       entryId: string,
       value: { medalDelta: number; reason: string },
     ) => patch<LedgerEntry>(`/workspaces/${id}/ledger/${entryId}`, value),
-    reverse: (id: string, entryId: string, reason: string) =>
+    reverse: (id: string, entryId: string, reason = '') =>
       post<LedgerEntry>(`/workspaces/${id}/ledger/${entryId}/reverse`, {
         reason,
         idempotencyKey: createIdempotencyKey(),

@@ -74,7 +74,14 @@
     "replaceHint": "Change places and update. Old points for this game are reversed automatically.",
     "loadingResults": "Loading saved places…",
     "replaceReason": "Correct game ranking",
-    "unassigned": "Unassigned"
+    "unassigned": "Unassigned",
+    "previewTitle": "Expected awards",
+    "previewTeam": "Team",
+    "previewPlace": "Place",
+    "previewMedals": "{{label}} (HH)",
+    "previewPieces": "{{label}}",
+    "previewPartial": "Preview for assigned places only — finish all places before saving.",
+    "previewReplaceHint": "These are the new awards; previous awards for this game are reversed first."
   },
   "ledger": {
     "title": "Score history",
@@ -98,8 +105,8 @@
     "updated": "Adjustment updated",
     "reverse": "Reverse",
     "reverseAria": "Reverse transaction for {{team}}",
-    "reasonPrompt": "Reason for reversal?",
-    "reversed": "Reversal transaction created"
+    "reversed": "Reversal transaction created",
+    "confirmReverse": "Reverse this transaction for {{team}}? This creates an opposite ledger entry and cannot be undone from here."
   },
   "parseDelta": {
     "empty": "Enter a delta, e.g. +5 or -2",

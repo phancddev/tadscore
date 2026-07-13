@@ -1,5 +1,6 @@
 import { expect } from 'vitest';
 import type { ApiHarness } from './helpers.js';
+import { runGameReverseAndReplaceCases, runReverseCases } from './scoring-ops-reverse.cases.js';
 
 type Ctx = {
   api: ApiHarness;
@@ -30,6 +31,14 @@ export async function runScoringOpsCases(ctx: Ctx) {
     (await post(`${base}/games`, { ...gameBody, activityKey: 'warmup-2' }, scorerCookie))
       .statusCode,
   ).toBe(409);
+
+  // Activities list exposes medalAwards from rule_snapshot (HOH2026 warmup-1).
+  const activitiesRes = await request('GET', `${base}/activities`, undefined, viewerCookie);
+  expect(activitiesRes.statusCode).toBe(200);
+  const warmup1 = activitiesRes
+    .json()
+    .data.find((a: { activityKey: string }) => a.activityKey === 'warmup-1');
+  expect(warmup1?.medalAwards).toEqual([14, 7, 4, 2]);
 
   const teamId = teams[0]!.id;
   const adjust = (body: object, cookie: string) => post(`${base}/adjustments`, body, cookie);
@@ -130,6 +139,17 @@ export async function runScoringOpsCases(ctx: Ctx) {
     (await request('GET', `${base}/ranking`, undefined, viewerCookie)).json().data.teams[0].medals,
   ).toBe(0);
 
+  await runReverseCases({
+    api: ctx.api,
+    adminCookie,
+    scorerCookie,
+    viewerCookie,
+    base,
+    teamId,
+    post,
+    adjust,
+  });
+
   const publicSlug = `pub-${Date.now().toString(36)}`;
   const publicLink = await post(
     `${base}/public-links`,
@@ -211,63 +231,17 @@ export async function runScoringOpsCases(ctx: Ctx) {
   expect((await request('GET', `/api/public/rankings/${newToken}`)).statusCode).toBe(404);
   expect((await request('GET', `/api/public/rankings/${publicSlug}`)).statusCode).toBe(404);
 
-  const secondGame = await post(
-    `${base}/games`,
-    { ...gameBody, activityKey: 'warmup-2', idempotencyKey: 'game-two' },
-    scorerCookie,
-  );
-  expect(secondGame.statusCode).toBe(201);
-  const reversePath = `${base}/games/${game.json().data.id}/reverse`;
-  expect(
-    (await post(reversePath, { reason: 'mistake', idempotencyKey: 'reverse-game-1' }, adminCookie))
-      .statusCode,
-  ).toBe(201);
-  expect(
-    (await post(reversePath, { reason: 'mistake', idempotencyKey: 'reverse-game-1' }, adminCookie))
-      .statusCode,
-  ).toBe(200);
-  const reverseConflict = await post(
-    `${base}/games/${secondGame.json().data.id}/reverse`,
-    { reason: 'mistake', idempotencyKey: 'reverse-game-1' },
+  await runGameReverseAndReplaceCases({
+    api: ctx.api,
     adminCookie,
-  );
-  expect(reverseConflict.statusCode).toBe(409);
-  expect(reverseConflict.json().error.code).toBe('IDEMPOTENCY_CONFLICT');
-
-  // Re-submit warmup-1 (reopened by reverse), then replace ranks as scorer.
-  const resubmit = await post(
-    `${base}/games`,
-    { ...gameBody, activityKey: 'warmup-1', idempotencyKey: 'game-one-resubmit' },
     scorerCookie,
-  );
-  expect(resubmit.statusCode).toBe(201);
-  const replaceBody = {
-    activityKey: 'warmup-1',
-    idempotencyKey: 'replace-warmup-1',
-    reason: 'fix ranks',
-    results: teams.map((team, index) => ({
-      teamId: team.id,
-      rank: index === 0 ? 2 : index === 1 ? 1 : index + 1,
-    })),
-  };
-  expect((await post(`${base}/games/replace`, replaceBody, viewerCookie)).statusCode).toBe(403);
-  const replaced = await post(`${base}/games/replace`, replaceBody, scorerCookie);
-  expect(replaced.statusCode).toBe(201);
-  expect((await post(`${base}/games/replace`, replaceBody, scorerCookie)).statusCode).toBe(200);
-  const savedRanks = await request(
-    'GET',
-    `${base}/activities/warmup-1/results`,
-    undefined,
     viewerCookie,
-  );
-  expect(savedRanks.statusCode).toBe(200);
-  const rankByTeam = Object.fromEntries(
-    savedRanks
-      .json()
-      .data.results.map((row: { teamId: string; rank: number }) => [row.teamId, row.rank]),
-  );
-  expect(rankByTeam[teams[0]!.id]).toBe(2);
-  expect(rankByTeam[teams[1]!.id]).toBe(1);
+    base,
+    teams,
+    gameBody,
+    firstGameId: game.json().data.id as string,
+    post,
+  });
 
   await request('PATCH', base, { status: 'locked' }, ownerCookie);
   expect((await request('GET', `${base}/ranking`, undefined, viewerCookie)).statusCode).toBe(200);

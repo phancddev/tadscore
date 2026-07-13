@@ -6,18 +6,15 @@ import { useParams } from 'react-router-dom';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Card, CardContent } from '../../components/ui/Card';
-import { Field } from '../../components/ui/Field';
 import { Input } from '../../components/ui/Input';
-import { Modal } from '../../components/ui/Modal';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { EmptyState, ErrorState, LoadingState } from '../../components/ui/State';
-import { Textarea } from '../../components/ui/Textarea';
 import { useToast } from '../../components/ui/Toast';
 import i18n from '../../i18n';
 import { api } from '../../lib/api';
-import { cn } from '../../lib/cn';
 import type { LedgerEntry } from '../../lib/types';
-import { parseMedalDelta } from './parseMedalDelta';
+import { LedgerDelta } from './LedgerDelta';
+import { LedgerEditModal } from './LedgerEditModal';
 
 export function LedgerPage() {
   const { t } = useTranslation('scoring');
@@ -39,12 +36,14 @@ export function LedgerPage() {
     queryFn: () => api.workspaces.get(workspaceId),
   });
   const reverse = useMutation({
-    mutationFn: ({ id, reason: reverseReason }: { id: string; reason: string }) =>
-      api.scoring.reverse(workspaceId, id, reverseReason),
+    mutationFn: (id: string) => api.scoring.reverse(workspaceId, id),
     onSuccess: () => {
       client.invalidateQueries({ queryKey: ['ledger', workspaceId] });
       client.invalidateQueries({ queryKey: ['ranking', workspaceId] });
       toast(t('ledger.reversed'));
+    },
+    onError: (error: Error) => {
+      toast(error.message, 'error');
     },
   });
   const updateEntry = useMutation({
@@ -83,9 +82,6 @@ export function LedgerPage() {
   const canMutate =
     workspaceActive && ['owner', 'admin', 'scorer'].includes(workspace.data?.role ?? '');
   const canReverse = workspaceActive && ['owner', 'admin'].includes(workspace.data?.role ?? '');
-  const parsedDelta = parseMedalDelta(deltaText);
-  const reasonTrimmed = reason.trim();
-  const formValid = parsedDelta.ok && reasonTrimmed.length >= 2;
   return (
     <div className="page-shell">
       <PageHeader title={t('ledger.title')} description={t('ledger.description')} />
@@ -140,7 +136,10 @@ export function LedgerPage() {
                     <p className="m-0 mt-1 text-sm text-[var(--muted-foreground)]">
                       {entry.activityName ||
                         String(
-                          entry.metadata?.reason || entry.metadata?.kind || t('ledger.adjustment'),
+                          entry.metadata?.reason ||
+                            (entry.reversesEntryId
+                              ? t('ledger.reversal')
+                              : entry.metadata?.kind || t('ledger.adjustment')),
                         )}
                     </p>
                     <p className="m-0 mt-1 text-xs text-[var(--muted-foreground)]">
@@ -148,9 +147,9 @@ export function LedgerPage() {
                     </p>
                   </div>
                   <div className="flex items-center gap-3 text-right tabular">
-                    <Delta value={entry.medalDelta} label={tc('metrics.medals')} />
-                    <Delta value={entry.pieceDelta} label={tc('metrics.piece')} />
-                    <Delta value={entry.itemDelta} label={tc('metrics.items')} />
+                    <LedgerDelta value={entry.medalDelta} label={tc('metrics.medals')} />
+                    <LedgerDelta value={entry.pieceDelta} label={tc('metrics.piece')} />
+                    <LedgerDelta value={entry.itemDelta} label={tc('metrics.items')} />
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {isEditable && (
@@ -168,11 +167,13 @@ export function LedgerPage() {
                       <Button
                         variant="ghost"
                         size="sm"
+                        loading={reverse.isPending && reverse.variables === entry.id}
+                        disabled={reverse.isPending}
                         aria-label={t('ledger.reverseAria', { team: entry.teamName })}
                         onClick={() => {
-                          const reverseReason = prompt(t('ledger.reasonPrompt'));
-                          if (reverseReason?.trim())
-                            reverse.mutate({ id: entry.id, reason: reverseReason.trim() });
+                          if (!window.confirm(t('ledger.confirmReverse', { team: entry.teamName })))
+                            return;
+                          reverse.mutate(entry.id);
                         }}
                       >
                         <RotateCcw className="h-4 w-4" />
@@ -186,109 +187,20 @@ export function LedgerPage() {
           })}
         </div>
       )}
-      <Modal
-        open={!!editing}
-        onClose={() => !updateEntry.isPending && setEditing(null)}
-        title={t('ledger.editTitle')}
-        footer={
-          <>
-            <Button
-              variant="secondary"
-              disabled={updateEntry.isPending}
-              onClick={() => setEditing(null)}
-            >
-              {tc('actions.cancel')}
-            </Button>
-            <Button
-              loading={updateEntry.isPending}
-              disabled={!formValid || !editing}
-              onClick={() => {
-                if (!editing || !parsedDelta.ok) return;
-                updateEntry.mutate({
-                  id: editing.id,
-                  medalDelta: parsedDelta.value,
-                  reason: reasonTrimmed,
-                });
-              }}
-            >
-              {tc('actions.save')}
-            </Button>
-          </>
-        }
-      >
-        {editing && (
-          <form
-            className="grid gap-4"
-            onSubmit={(event) => {
-              event.preventDefault();
-              if (!parsedDelta.ok || reasonTrimmed.length < 2) return;
-              updateEntry.mutate({
-                id: editing.id,
-                medalDelta: parsedDelta.value,
-                reason: reasonTrimmed,
-              });
-            }}
-          >
-            <p className="m-0 text-sm text-[var(--muted-foreground)]">
-              {t('ledger.editHint', { team: editing.teamName })}
-            </p>
-            <Field
-              label={t('ledger.editDelta')}
-              htmlFor="ledger-edit-delta"
-              hint={t('ledger.editDeltaHint')}
-              error={!parsedDelta.ok && deltaText ? parsedDelta.error : undefined}
-            >
-              <Input
-                id="ledger-edit-delta"
-                value={deltaText}
-                onChange={(event) => setDeltaText(event.target.value)}
-                placeholder={t('quick.deltaPlaceholder')}
-                autoFocus
-              />
-            </Field>
-            <Field
-              label={t('ledger.editReason')}
-              htmlFor="ledger-edit-reason"
-              error={
-                reason.length > 0 && reasonTrimmed.length < 2
-                  ? t('ledger.reasonTooShort')
-                  : undefined
-              }
-            >
-              <Textarea
-                id="ledger-edit-reason"
-                value={reason}
-                onChange={(event) => setReason(event.target.value)}
-                placeholder={t('quick.reasonPlaceholder')}
-                maxLength={500}
-              />
-            </Field>
-            {updateEntry.error && (
-              <p role="alert" className="m-0 text-sm text-[var(--destructive)]">
-                {updateEntry.error.message}
-              </p>
-            )}
-          </form>
-        )}
-      </Modal>
-    </div>
-  );
-}
-
-function Delta({ value, label }: { value: number; label: string }) {
-  return (
-    <div>
-      <strong
-        className={cn(
-          'text-sm font-semibold',
-          value > 0 && 'text-[var(--success)]',
-          value < 0 && 'text-[var(--destructive)]',
-        )}
-      >
-        {value > 0 ? '+' : ''}
-        {value}
-      </strong>
-      <span className="block text-[10px] text-[var(--muted-foreground)]">{label}</span>
+      <LedgerEditModal
+        editing={editing}
+        deltaText={deltaText}
+        reason={reason}
+        saving={updateEntry.isPending}
+        errorMessage={updateEntry.error?.message}
+        onDeltaChange={setDeltaText}
+        onReasonChange={setReason}
+        onClose={() => setEditing(null)}
+        onSave={(medalDelta, nextReason) => {
+          if (!editing) return;
+          updateEntry.mutate({ id: editing.id, medalDelta, reason: nextReason });
+        }}
+      />
     </div>
   );
 }

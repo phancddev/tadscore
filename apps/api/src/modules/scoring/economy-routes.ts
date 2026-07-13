@@ -207,7 +207,7 @@ export async function economyRoutes(app: FastifyInstance) {
               'IDEMPOTENCY_CONFLICT',
               'Idempotency key was already used for a different request',
             );
-          return duplicate.rows[0];
+          return { row: duplicate.rows[0], idempotent: true };
         }
         const original = (
           await client.query<{
@@ -263,14 +263,14 @@ export async function economyRoutes(app: FastifyInstance) {
               [purchase.quantity, workspaceId, original.team_id, purchase.item_key],
             );
         }
-        return created;
+        return { row: created, idempotent: false };
       });
       publishRanking(workspaceId);
       await audit(request, 'score.entry.reverse', 'score_ledger', entryId, {
         workspaceId,
         after: { reason: input.reason },
       });
-      return reply.status(201).send({ data: camelize(reversal) });
+      return reply.status(reversal.idempotent ? 200 : 201).send({ data: camelize(reversal.row) });
     },
   );
 }

@@ -32,8 +32,9 @@ export const purchaseSchema = z.object({
   quantity: z.number().int().min(1).max(100),
   idempotencyKey: idempotencySchema,
 });
+/** Reverse/undo: reason is optional (empty or omitted allowed); still capped at 500. */
 export const reversalSchema = z.object({
-  reason: z.string().trim().min(2).max(500),
+  reason: z.string().trim().max(500).optional().default(''),
   idempotencyKey: idempotencySchema,
 });
 /** In-place edit of adjustment/penalty reason and medal delta (not score history rewrite via reversal). */
