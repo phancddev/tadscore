@@ -1,8 +1,12 @@
 /* HOH parchment body washes + decorative utilities */
 
-/* Shared mountain silhouette (green layers + gold outline) */
+/*
+ * Mountains stretch full-width; sugarcane tiles at natural proportions so
+ * stalks stay tall (not flattened by preserveAspectRatio:none stretch).
+ */
 :root {
-  --hoh-mountains-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 200' preserveAspectRatio='none'%3E%3Cpath fill='%232A4035' fill-opacity='0.55' d='M0 200 L0 120 L80 95 L160 130 L240 70 L320 110 L400 50 L480 100 L560 65 L640 120 L720 40 L800 95 L880 75 L960 130 L1040 85 L1120 115 L1200 90 L1200 200 Z'/%3E%3Cpath fill='%233D5C4A' fill-opacity='0.45' d='M0 200 L0 145 L100 115 L200 150 L300 100 L420 140 L520 90 L640 145 L760 105 L880 150 L1000 110 L1100 140 L1200 120 L1200 200 Z'/%3E%3Cpath fill='none' stroke='%23C4A35A' stroke-opacity='0.35' stroke-width='1.5' d='M0 120 L80 95 L160 130 L240 70 L320 110 L400 50 L480 100 L560 65 L640 120 L720 40 L800 95 L880 75 L960 130 L1040 85 L1120 115 L1200 90'/%3E%3C/svg%3E");
+  --hoh-mountains-image: url('/decor/hoh-mountains.svg');
+  --hoh-sugarcane-image: url('/decor/hoh-sugarcane.svg');
 }
 
 /* Do not set min-height here — callers use Tailwind min-h-dvh / content height */
@@ -17,10 +21,14 @@
   width: 100%;
   min-height: 8rem;
   background-color: transparent;
-  background-image: var(--hoh-mountains-image);
-  background-repeat: no-repeat;
-  background-position: bottom center;
-  background-size: 100% 100%;
+  background-image: var(--hoh-sugarcane-image), var(--hoh-mountains-image);
+  background-repeat: repeat-x, no-repeat;
+  background-position:
+    bottom center,
+    bottom center;
+  background-size:
+    auto 6.5rem,
+    100% 100%;
 }
 
 .hoh-atmosphere.hoh-atmosphere--with-mountains {
@@ -35,10 +43,14 @@
   right: 0;
   bottom: 0;
   height: 8rem;
-  background-image: var(--hoh-mountains-image);
-  background-repeat: no-repeat;
-  background-position: bottom center;
-  background-size: 100% 100%;
+  background-image: var(--hoh-sugarcane-image), var(--hoh-mountains-image);
+  background-repeat: repeat-x, no-repeat;
+  background-position:
+    bottom center,
+    bottom center;
+  background-size:
+    auto 6.5rem,
+    100% 100%;
 }
 
 .hoh-ornament-frame {
