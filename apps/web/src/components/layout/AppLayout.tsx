@@ -43,7 +43,7 @@ export function AppLayout() {
             cn(
               'flex min-h-11 items-center gap-3 rounded-[var(--radius)] px-3 text-sm font-medium transition-colors',
               isActive
-                ? 'bg-[var(--muted)] text-[var(--foreground)]'
+                ? 'bg-[var(--primary-soft)] text-[var(--primary)]'
                 : 'text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]',
             )
           }
@@ -62,7 +62,7 @@ export function AppLayout() {
       >
         {t('nav.skip')}
       </a>
-      <aside className="hidden border-r border-[var(--border)] bg-[var(--card)] p-4 lg:flex lg:min-h-dvh lg:flex-col">
+      <aside className="hidden border-r border-[var(--border)] bg-[var(--card)]/95 p-4 lg:flex lg:min-h-dvh lg:flex-col">
         <Brand />
         <div className="mt-8">{nav()}</div>
         <div className="mt-auto border-t border-[var(--border)] pt-4">
@@ -88,7 +88,7 @@ export function AppLayout() {
         </div>
       </aside>
       <div className="min-w-0">
-        <header className="sticky top-0 z-40 flex h-14 items-center justify-between border-b border-[var(--border)] bg-[var(--background)] px-4 lg:hidden">
+        <header className="sticky top-0 z-40 flex h-14 items-center justify-between border-b border-[var(--border)] bg-[var(--background)]/90 px-4 backdrop-blur lg:hidden">
           <Brand />
           <div className="flex items-center gap-1">
             <LanguageSwitcher />
@@ -141,7 +141,7 @@ export function AppLayout() {
         </main>
         <nav
           aria-label={t('nav.quick')}
-          className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-2 border-t border-[var(--border)] bg-[var(--card)] px-2 pb-[max(.5rem,env(safe-area-inset-bottom))] pt-2 lg:hidden"
+          className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-2 border-t border-[var(--border)] bg-[var(--card)]/95 px-2 pb-[max(.5rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur lg:hidden"
         >
           {baseNav.map(({ to, label, icon: Icon }) => (
             <NavLink
@@ -149,8 +149,10 @@ export function AppLayout() {
               key={to}
               className={({ isActive }) =>
                 cn(
-                  'grid min-h-12 place-items-center rounded-[var(--radius)] text-xs font-medium',
-                  isActive ? 'text-[var(--foreground)]' : 'text-[var(--muted-foreground)]',
+                  'grid min-h-12 place-items-center rounded-[var(--radius)] text-xs font-medium transition-colors',
+                  isActive
+                    ? 'bg-[var(--primary-soft)] text-[var(--primary)]'
+                    : 'text-[var(--muted-foreground)]',
                 )
               }
             >

@@ -1,26 +1,32 @@
 import { Link } from 'react-router-dom';
 import { cn } from '../../lib/cn';
 
+const LOGO_SRC = '/logo/hoh2026.jpg';
+
 export function Brand({ inverse = false }: { inverse?: boolean }) {
   return (
     <Link
       to="/"
       className={cn(
-        'inline-flex min-h-11 items-center gap-2 text-base font-semibold tracking-tight',
+        'inline-flex min-h-11 items-center gap-2.5 text-base font-semibold tracking-tight',
         inverse ? 'text-white' : 'text-[var(--foreground)]',
       )}
     >
-      <span
+      <img
+        src={LOGO_SRC}
+        alt=""
+        width={32}
+        height={32}
+        decoding="async"
         className={cn(
-          'grid h-8 w-8 place-items-center rounded-[var(--radius)] border text-xs font-semibold',
-          inverse
-            ? 'border-white/20 bg-white/10 text-white'
-            : 'border-[var(--border)] bg-[var(--muted)] text-[var(--foreground)]',
+          'h-8 w-8 shrink-0 rounded-[var(--radius)] object-cover',
+          inverse ? 'ring-1 ring-white/30' : 'border border-[var(--primary)]/25 shadow-sm',
         )}
-      >
-        TS
+        aria-hidden="true"
+      />
+      <span className={cn('font-display tracking-tight', inverse ? 'text-white' : undefined)}>
+        TadScore
       </span>
-      <span>TadScore</span>
     </Link>
   );
 }

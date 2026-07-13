@@ -1,0 +1,143 @@
+/* HOH parchment body washes + decorative utilities */
+
+/* Shared mountain silhouette (green layers + gold outline) */
+:root {
+  --hoh-mountains-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 200' preserveAspectRatio='none'%3E%3Cpath fill='%232A4035' fill-opacity='0.55' d='M0 200 L0 120 L80 95 L160 130 L240 70 L320 110 L400 50 L480 100 L560 65 L640 120 L720 40 L800 95 L880 75 L960 130 L1040 85 L1120 115 L1200 90 L1200 200 Z'/%3E%3Cpath fill='%233D5C4A' fill-opacity='0.45' d='M0 200 L0 145 L100 115 L200 150 L300 100 L420 140 L520 90 L640 145 L760 105 L880 150 L1000 110 L1100 140 L1200 120 L1200 200 Z'/%3E%3Cpath fill='none' stroke='%23C4A35A' stroke-opacity='0.35' stroke-width='1.5' d='M0 120 L80 95 L160 130 L240 70 L320 110 L400 50 L480 100 L560 65 L640 120 L720 40 L800 95 L880 75 L960 130 L1040 85 L1120 115 L1200 90'/%3E%3C/svg%3E");
+}
+
+/* Do not set min-height here — callers use Tailwind min-h-dvh / content height */
+.hoh-atmosphere {
+  position: relative;
+  background-color: transparent;
+}
+
+.hoh-mountains {
+  pointer-events: none;
+  position: relative;
+  width: 100%;
+  min-height: 8rem;
+  background-color: transparent;
+  background-image: var(--hoh-mountains-image);
+  background-repeat: no-repeat;
+  background-position: bottom center;
+  background-size: 100% 100%;
+}
+
+.hoh-atmosphere.hoh-atmosphere--with-mountains {
+  padding-bottom: 8rem;
+}
+
+.hoh-atmosphere.hoh-atmosphere--with-mountains::after {
+  content: '';
+  pointer-events: none;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 8rem;
+  background-image: var(--hoh-mountains-image);
+  background-repeat: no-repeat;
+  background-position: bottom center;
+  background-size: 100% 100%;
+}
+
+.hoh-ornament-frame {
+  position: relative;
+}
+
+.hoh-ornament-frame::before,
+.hoh-ornament-frame::after {
+  content: '';
+  position: absolute;
+  width: 1.25rem;
+  height: 1.25rem;
+  pointer-events: none;
+  z-index: 1;
+  border-color: color-mix(in srgb, var(--gold) 70%, var(--primary));
+  border-style: solid;
+  border-width: 0;
+}
+
+.hoh-ornament-frame::before {
+  top: 0.4rem;
+  left: 0.4rem;
+  border-top-width: 2px;
+  border-left-width: 2px;
+}
+
+.hoh-ornament-frame::after {
+  bottom: 0.4rem;
+  right: 0.4rem;
+  border-bottom-width: 2px;
+  border-right-width: 2px;
+}
+
+.hoh-corner {
+  position: absolute;
+  width: 1rem;
+  height: 1rem;
+  pointer-events: none;
+  border-color: color-mix(in srgb, var(--gold) 70%, var(--primary));
+  border-style: solid;
+  border-width: 0;
+  z-index: 1;
+}
+
+.hoh-corner-tl {
+  top: 0.35rem;
+  left: 0.35rem;
+  border-top-width: 2px;
+  border-left-width: 2px;
+}
+
+.hoh-corner-tr {
+  top: 0.35rem;
+  right: 0.35rem;
+  border-top-width: 2px;
+  border-right-width: 2px;
+}
+
+.hoh-corner-bl {
+  bottom: 0.35rem;
+  left: 0.35rem;
+  border-bottom-width: 2px;
+  border-left-width: 2px;
+}
+
+.hoh-corner-br {
+  bottom: 0.35rem;
+  right: 0.35rem;
+  border-bottom-width: 2px;
+  border-right-width: 2px;
+}
+
+.hoh-rank-1 {
+  color: var(--winner-ink);
+}
+
+.hoh-rank-gold-bg {
+  background: var(--winner-soft);
+  border-color: color-mix(in srgb, var(--gold) 45%, var(--border));
+}
+
+button.hoh-rank-gold-bg:hover {
+  background: color-mix(in srgb, var(--winner-soft) 88%, var(--foreground));
+}
+
+.hoh-rank-gold-text {
+  color: var(--gold-ink);
+}
+
+@media print {
+  .hoh-ornament-frame::before,
+  .hoh-ornament-frame::after,
+  .hoh-corner,
+  .hoh-mountains,
+  .hoh-atmosphere.hoh-atmosphere--with-mountains::after {
+    display: none !important;
+  }
+
+  .hoh-atmosphere.hoh-atmosphere--with-mountains {
+    padding-bottom: 0;
+  }
+}

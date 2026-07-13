@@ -18,7 +18,7 @@ export function AwardPreviewTable({
       aria-labelledby="rank-preview-title"
       className="rounded-[var(--radius)] border border-[var(--border)] bg-[var(--muted)]/30 p-3"
     >
-      <h3 id="rank-preview-title" className="m-0 text-sm font-semibold">
+      <h3 id="rank-preview-title" className="section-title m-0 text-sm">
         {t('rank.previewTitle')}
       </h3>
       {isReplace && (

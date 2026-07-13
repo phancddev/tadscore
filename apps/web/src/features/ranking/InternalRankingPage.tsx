@@ -83,7 +83,7 @@ export function InternalRankingPage() {
   const existing = links.data?.[0];
   const statusKey = workspace.data?.status || '';
   return (
-    <div className="page-shell">
+    <div className="page-shell hoh-atmosphere">
       <PageHeader title={tr('internal.title')} description={tr('internal.description')} />
       {roleCanManage && !canManage && (
         <Alert variant="warning" className="mb-5" role="status">
@@ -95,7 +95,7 @@ export function InternalRankingPage() {
       <Leaderboard ranking={ranking.data} onTeam={setTeam} />
       {roleCanManage && (
         <section className="mt-8">
-          <h2 className="mb-3 text-sm font-semibold">{tr('internal.publicLinks')}</h2>
+          <h2 className="section-title mb-3">{tr('internal.publicLinks')}</h2>
           {links.isLoading ? (
             <LoadingState rows={1} />
           ) : links.isError ? (

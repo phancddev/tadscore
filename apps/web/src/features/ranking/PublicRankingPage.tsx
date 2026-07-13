@@ -74,15 +74,21 @@ export function PublicRankingPage() {
     );
   return (
     <main
-      className={`min-h-dvh ${presenter ? 'bg-[var(--background)] p-4 md:p-8 2xl:p-12' : 'page-shell'}`}
+      className={`hoh-atmosphere hoh-atmosphere--with-mountains min-h-dvh ${
+        presenter ? 'bg-[var(--background)] p-4 md:p-8 2xl:p-12' : 'page-shell'
+      }`}
     >
       <header
-        className={`mb-6 flex flex-wrap items-center justify-between gap-4 ${presenter ? 'md:mb-10' : ''}`}
+        className={`relative mb-6 flex flex-wrap items-center justify-between gap-4 ${
+          presenter ? 'hoh-ornament-frame md:mb-10 md:px-2 md:py-1' : ''
+        }`}
       >
         <div>
           {!presenter && <Brand />}
           <h1
-            className={`m-0 font-semibold tracking-tight ${presenter ? 'mt-0 text-4xl md:text-6xl' : 'mt-5 text-2xl md:text-3xl'}`}
+            className={`m-0 font-display font-semibold tracking-tight ${
+              presenter ? 'mt-0 text-4xl md:text-6xl' : 'mt-5 text-2xl md:text-3xl'
+            }`}
           >
             {query.data.workspace.name}
           </h1>

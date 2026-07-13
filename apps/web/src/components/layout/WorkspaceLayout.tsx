@@ -31,7 +31,7 @@ export function WorkspaceLayout() {
                 cn(
                   'flex min-h-11 shrink-0 items-center gap-2 border-b-2 px-3 text-sm font-medium transition-colors',
                   isActive
-                    ? 'border-[var(--foreground)] text-[var(--foreground)]'
+                    ? 'border-[var(--primary)] text-[var(--primary)]'
                     : 'border-transparent text-[var(--muted-foreground)] hover:text-[var(--foreground)]',
                 )
               }

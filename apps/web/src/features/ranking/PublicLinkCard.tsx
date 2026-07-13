@@ -60,7 +60,9 @@ export function PublicLinkCard({
   return (
     <Card className="grid gap-4 p-4">
       <div className="min-w-0">
-        <p className="m-0 text-sm font-medium">{link.label || tr('linkCard.defaultLabel')}</p>
+        <p className="m-0 text-sm font-medium font-display">
+          {link.label || tr('linkCard.defaultLabel')}
+        </p>
         <p className="m-0 mt-0.5 text-sm text-[var(--muted-foreground)]">
           {tr('linkCard.meta', {
             tokenVis: visibilityLabel(link.tokenEnabled),

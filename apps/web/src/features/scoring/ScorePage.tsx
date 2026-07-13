@@ -160,7 +160,7 @@ export function ScorePage() {
         actions={
           <Badge tone={online ? 'outline' : 'danger'} className="gap-1.5 font-normal">
             {online ? (
-              <Cloud className="h-3.5 w-3.5 text-[var(--muted-foreground)]" aria-hidden />
+              <Cloud className="h-3.5 w-3.5 text-[var(--primary)]" aria-hidden />
             ) : (
               <CloudOff className="h-3.5 w-3.5" aria-hidden />
             )}

@@ -5,9 +5,10 @@ export function LedgerDelta({ value, label }: { value: number; label: string }) 
     <div>
       <strong
         className={cn(
-          'text-sm font-semibold',
+          'text-sm font-semibold tabular',
           value > 0 && 'text-[var(--success)]',
           value < 0 && 'text-[var(--destructive)]',
+          value === 0 && 'text-[var(--muted-foreground)]',
         )}
       >
         {value > 0 ? '+' : ''}

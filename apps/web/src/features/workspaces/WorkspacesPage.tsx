@@ -78,7 +78,7 @@ export function WorkspacesPage() {
             <Link key={item.id} to={`/workspaces/${item.id}`} className="group block">
               <Card className="h-full transition-colors hover:bg-[var(--muted)]/40">
                 <CardHeader className="flex-row items-start justify-between gap-3 space-y-0">
-                  <CardTitle className="text-lg">{item.name}</CardTitle>
+                  <CardTitle className="font-display text-lg">{item.name}</CardTitle>
                   <Badge tone={item.status === 'active' ? 'success' : 'warning'}>
                     {item.status}
                   </Badge>

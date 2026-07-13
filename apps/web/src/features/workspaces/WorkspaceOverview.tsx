@@ -61,11 +61,11 @@ export function WorkspaceOverview() {
       )}
       <section aria-labelledby="teams-title">
         <div className="mb-3 flex items-center justify-between">
-          <h2 id="teams-title" className="m-0 text-base font-semibold tracking-tight">
+          <h2 id="teams-title" className="section-title m-0">
             {t('overview.teamsTitle')}
           </h2>
           <Link
-            className="flex min-h-11 items-center gap-2 text-sm font-medium text-[var(--foreground)] underline-offset-4 hover:underline"
+            className="flex min-h-11 items-center gap-2 text-sm font-medium text-[var(--primary)] underline-offset-4 hover:underline"
             to="ranking"
           >
             {t('overview.viewRanking')} <ArrowRight className="h-4 w-4" />
@@ -77,14 +77,20 @@ export function WorkspaceOverview() {
               <div className="h-1" style={{ backgroundColor: team.color || 'var(--primary)' }} />
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-sm font-medium text-[var(--muted-foreground)]">
+                  <span
+                    className={
+                      team.rank === 1
+                        ? 'hoh-rank-1 text-sm font-medium'
+                        : 'text-sm font-medium text-[var(--muted-foreground)]'
+                    }
+                  >
                     {t('overview.rank', { rank: team.rank })}
                   </span>
                   <Badge tone={team.eligible ? 'success' : 'neutral'}>
                     {team.eligible ? t('overview.eligible') : t('overview.accumulating')}
                   </Badge>
                 </div>
-                <h3 className="m-0 text-xl font-semibold tracking-tight">
+                <h3 className="font-display m-0 text-xl font-semibold tracking-tight">
                   {team.displayName || team.name}
                 </h3>
               </CardHeader>
@@ -101,10 +107,12 @@ export function WorkspaceOverview() {
       </section>
       <section className="mt-6 grid gap-4 md:grid-cols-2">
         <Link to="score" className="block">
-          <Card className="flex min-h-20 items-center gap-4 p-5 transition-colors hover:bg-[var(--muted)]/40">
-            <Radio className="h-5 w-5 shrink-0 text-[var(--muted-foreground)]" />
+          <Card className="flex min-h-20 items-center gap-4 p-5 transition-colors hover:bg-[var(--primary-soft)]/50">
+            <Radio className="h-5 w-5 shrink-0 text-[var(--primary)]" />
             <div>
-              <h2 className="m-0 text-base font-semibold">{t('overview.scoreTitle')}</h2>
+              <h2 className="font-display m-0 text-base font-semibold">
+                {t('overview.scoreTitle')}
+              </h2>
               <p className="m-0 text-sm text-[var(--muted-foreground)]">
                 {t('overview.scoreDescription')}
               </p>
@@ -112,10 +120,12 @@ export function WorkspaceOverview() {
           </Card>
         </Link>
         <Link to="members" className="block">
-          <Card className="flex min-h-20 items-center gap-4 p-5 transition-colors hover:bg-[var(--muted)]/40">
-            <Users className="h-5 w-5 shrink-0 text-[var(--muted-foreground)]" />
+          <Card className="flex min-h-20 items-center gap-4 p-5 transition-colors hover:bg-[var(--primary-soft)]/50">
+            <Users className="h-5 w-5 shrink-0 text-[var(--primary)]" />
             <div>
-              <h2 className="m-0 text-base font-semibold">{t('overview.membersTitle')}</h2>
+              <h2 className="font-display m-0 text-base font-semibold">
+                {t('overview.membersTitle')}
+              </h2>
               <p className="m-0 text-sm text-[var(--muted-foreground)]">
                 {t('overview.membersDescription')}
               </p>

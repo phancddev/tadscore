@@ -21,7 +21,9 @@ export function Metric({
         className,
       )}
     >
-      {Icon && <Icon className="mx-auto h-4 w-4 text-[var(--muted-foreground)]" aria-hidden />}
+      {Icon && (
+        <Icon className="mx-auto h-4 w-4 text-[var(--primary)]" aria-hidden />
+      )}
       <strong className={cn('mt-0.5 block tabular', large ? 'text-2xl' : 'text-lg')}>{value}</strong>
       <span className="text-[11px] font-medium text-[var(--muted-foreground)]">{label}</span>
     </div>

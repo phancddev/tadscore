@@ -69,7 +69,12 @@ export function TeamDetailView({
   return (
     <div className="grid gap-6">
       <div className="grid grid-cols-3 gap-2">
-        <Metric icon={Medal} value={detail.medals} label={tc('metrics.medals')} />
+        <Metric
+          icon={Medal}
+          value={detail.medals}
+          label={tc('metrics.medals')}
+          className="border-[color-mix(in_srgb,var(--gold)_40%,var(--border))] [&_svg]:text-[var(--winner)]"
+        />
         <Metric icon={Gem} value={detail.pieces} label={tc('metrics.pieces')} />
         <Metric icon={Package} value={detail.items} label={tc('metrics.items')} />
       </div>
@@ -81,7 +86,7 @@ export function TeamDetailView({
       </div>
       <section>
         <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold">
-          <Trophy className="h-4 w-4 text-[var(--muted-foreground)]" aria-hidden />
+          <Trophy className="h-4 w-4 hoh-rank-1" aria-hidden />
           {tr('detail.winsSection')}
         </h3>
         {!wins.length ? (

@@ -16,16 +16,18 @@ export function Leaderboard({
   const { t: tr } = useTranslation('ranking');
   const { t: tc } = useTranslation('common');
   const teams = [...ranking.teams].sort((a, b) => a.rank - b.rank);
-  const placeLabel = (index: number, rank: number) => {
+  const placeLabel = (rank: number) => {
     const places = [tr('board.place1'), tr('board.place2'), tr('board.place3'), tr('board.place4')];
-    return places[index] || tr('board.placeN', { rank });
+    return places[rank - 1] || tr('board.placeN', { rank });
   };
   return (
     <section
       aria-label={tr('board.aria')}
       className={presenter ? 'grid gap-5 xl:grid-cols-2' : 'grid gap-3'}
     >
-      {teams.map((team, index) => {
+      {teams.map((team) => {
+        const isFirst = team.rank === 1;
+        const isPodium = team.rank === 2 || team.rank === 3;
         const content = (
           <>
             <div
@@ -36,11 +38,17 @@ export function Leaderboard({
               className={`grid h-full grid-cols-[auto_1fr] items-center gap-4 pl-6 md:grid-cols-[auto_1fr_auto] ${presenter ? 'p-6' : 'p-4'}`}
             >
               <span
-                className={`flex items-center justify-center gap-1 font-semibold tabular text-[var(--muted-foreground)] ${presenter ? 'min-w-14 text-3xl' : 'min-w-10 text-xl'}`}
+                className={`flex items-center justify-center gap-1 font-semibold tabular ${
+                  isFirst
+                    ? 'hoh-rank-1'
+                    : isPodium
+                      ? 'text-[var(--primary)]'
+                      : 'text-[var(--muted-foreground)]'
+                } ${presenter ? 'min-w-14 text-3xl' : 'min-w-10 text-xl'}`}
               >
-                {index === 0 && (
+                {isFirst && (
                   <Trophy
-                    className={`${presenter ? 'h-5 w-5' : 'h-3.5 w-3.5'} shrink-0 text-[var(--muted-foreground)]`}
+                    className={`${presenter ? 'h-5 w-5' : 'h-3.5 w-3.5'} shrink-0 hoh-rank-1`}
                     aria-hidden
                   />
                 )}
@@ -50,10 +58,12 @@ export function Leaderboard({
                 <p
                   className={`m-0 font-medium text-[var(--muted-foreground)] ${presenter ? 'text-sm' : 'text-xs'}`}
                 >
-                  {placeLabel(index, team.rank)}
+                  {placeLabel(team.rank)}
                 </p>
                 <h2
-                  className={`m-0 mt-0.5 truncate font-semibold tracking-tight ${presenter ? 'text-3xl md:text-4xl' : 'text-lg'}`}
+                  className={`m-0 mt-0.5 truncate font-semibold tracking-tight ${
+                    presenter ? 'font-display text-3xl md:text-4xl' : 'text-lg'
+                  } ${isFirst ? 'hoh-rank-gold-text' : ''}`}
                 >
                   {team.displayName || team.name}
                 </h2>
@@ -95,7 +105,9 @@ export function Leaderboard({
             </div>
           </>
         );
-        const cardClass = `relative w-full overflow-hidden rounded-[var(--radius)] border border-[var(--border)] bg-[var(--card)] text-left ${presenter ? 'min-h-48' : 'min-h-28'}`;
+        const cardClass = `relative w-full overflow-hidden rounded-[var(--radius)] border border-[var(--border)] bg-[var(--card)] text-left ${
+          presenter ? 'min-h-48' : 'min-h-28'
+        } ${isFirst ? 'hoh-rank-gold-bg' : ''}`;
         return onTeam ? (
           <button
             key={team.teamId}

@@ -1,0 +1,57 @@
+/* HOH theme tokens — parchment / forest / teal-green */
+:root {
+  color-scheme: light;
+
+  --background: #f7f3e9;
+  --foreground: #1a2e28;
+  --card: #fffcf6;
+  --card-foreground: #1a2e28;
+  --muted: #e8efe9;
+  --muted-foreground: #5e6f68;
+  --border: #d4ddd4;
+  --input: #d4ddd4;
+  --ring: #0b5c4a;
+  --primary: #0b5c4a;
+  --primary-foreground: #f7f3e9;
+  --secondary: #e8efe9;
+  --secondary-foreground: #1a2e28;
+  --accent: #e8f0e6;
+  --accent-foreground: #0b5c4a;
+  --destructive: #b91c1c;
+  --destructive-foreground: #fffcf6;
+  --success: #2f6b4f;
+  --warning: #a67c2d;
+  --radius: 0.625rem;
+
+  --primary-hover: #094a3c;
+  --primary-soft: #dcebe4;
+  --danger: var(--destructive);
+  --danger-soft: #fef2f2;
+  --success-soft: #e8f5ee;
+  --success-strong: var(--success);
+  --warning-soft: #fbf3e0;
+  --surface: var(--card);
+  --surface-muted: var(--muted);
+  --sidebar: var(--card);
+  --accent-soft: var(--accent);
+  --accent-foreground-legacy: var(--accent-foreground);
+
+  /* Rank / medal — decorative gold; ink for text contrast on soft gold */
+  --winner: #b8954a;
+  --winner-soft: #f5edd8;
+  --winner-ink: #6b4f1d;
+  --gold: #c4a35a;
+  --gold-soft: #f5edd8;
+  --gold-ink: #6b4f1d;
+  --mountain: #3d5c4a;
+  --mountain-deep: #2a4035;
+
+  font-family:
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    sans-serif;
+}
