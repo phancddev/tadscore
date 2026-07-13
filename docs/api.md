@@ -56,21 +56,21 @@ share vĩnh viễn cho quyền edit. Owner không được cấp qua invitation.
 
 Prefix: `/api/workspaces/:workspaceId`.
 
-| Method/path suffix                     | Mục đích                                      | Quyền    |
-| -------------------------------------- | --------------------------------------------- | -------- |
-| `GET /activities`                      | Danh sách activity                            | `viewer` |
-| `GET /ranking`                         | Ranking nội bộ (+ shop/limits từ snapshot)    | `viewer` |
-| `GET /ranking/:teamId`                 | Breakdown team                                | `viewer` |
-| `GET /ledger`                          | Audit scoring có filter/pagination            | `viewer` |
-| `POST /games`                          | Submit đủ kết quả rank của game               | `scorer` |
-| `POST /games/replace`                  | Sửa rank game đã finalized (reverse+submit)   | `scorer` |
-| `GET /activities/:activityKey/results` | Rank hiện tại (prefill UI)                    | `viewer` |
-| `POST /games/:submissionId/reverse`    | Reverse toàn submission                       | `admin`  |
-| `POST /adjustments`                    | Speech/violation/adjustment                   | `scorer` |
-| `POST /purchases`                      | Mua mảnh/vật phẩm                             | `scorer` |
-| `PATCH /ledger/:entryId`               | Sửa medal delta + reason (adjustment/penalty) | `scorer` |
-| `POST /ledger/:entryId/reverse`        | Reverse một entry hợp lệ                      | `admin`  |
-| `GET /export.json`                     | Export ranking + ledger                       | `viewer` |
+| Method/path suffix                     | Mục đích                                       | Quyền    |
+| -------------------------------------- | ---------------------------------------------- | -------- |
+| `GET /activities`                      | Danh sách activity (+ medalAwards/pieceAwards) | `viewer` |
+| `GET /ranking`                         | Ranking nội bộ (+ shop/limits từ snapshot)     | `viewer` |
+| `GET /ranking/:teamId`                 | Breakdown team                                 | `viewer` |
+| `GET /ledger`                          | Audit scoring có filter/pagination             | `viewer` |
+| `POST /games`                          | Submit đủ kết quả rank của game                | `scorer` |
+| `POST /games/replace`                  | Sửa rank game đã finalized (reverse+submit)    | `scorer` |
+| `GET /activities/:activityKey/results` | Rank hiện tại (prefill UI)                     | `viewer` |
+| `POST /games/:submissionId/reverse`    | Reverse toàn submission                        | `admin`  |
+| `POST /adjustments`                    | Speech/violation/adjustment                    | `scorer` |
+| `POST /purchases`                      | Mua mảnh/vật phẩm                              | `scorer` |
+| `PATCH /ledger/:entryId`               | Sửa medal delta + reason (adjustment/penalty)  | `scorer` |
+| `POST /ledger/:entryId/reverse`        | Reverse một entry hợp lệ                       | `admin`  |
+| `GET /export.json`                     | Export ranking + ledger                        | `viewer` |
 
 ### Idempotency
 
@@ -86,6 +86,12 @@ còn gồm block `shop` (giá piece/item, `minimumPieces`, `pieceLimit`) lấy t
 từ registry live, để UI shop/limits khớp hành vi scoring đã khóa. `pieceLimit.active` phụ thuộc
 activity gate trong snapshot (ví dụ activity finalize đã mở limit hay chưa). Client không được tự
 bịa giá/limit; mọi purchase/adjustment vẫn enforce server-side trên snapshot.
+
+### Activities list awards
+
+`GET /activities` trả `medalAwards` / `pieceAwards` (mảng theo hạng, rank 1 → index 0) cho game xếp
+hạng, ưu tiên `workspaces.rule_snapshot` theo `activity_key` (cùng nguồn submit game), fallback
+`activities.rule_config` nếu snapshot thiếu/mảng rỗng. Dùng cho preview điểm thưởng trên UI.
 
 ### Submit game
 
@@ -110,9 +116,9 @@ sửa ghi `audit_logs` (`score.ledger.update`).
 ### Reversal
 
 Không có endpoint xóa ledger. Reversal tạo delta đối dấu, chỉ được thực hiện một lần và lưu actor,
-lý do, thời điểm. Reverse game luôn đảo toàn bộ submission trong một transaction; cùng key retry
-submission đó là idempotent, nhưng tái dùng key cho submission khác là conflict. Reverse purchase
-đồng thời giảm inventory.
+thời điểm; `reason` là optional (cho phép chuỗi rỗng). Reverse game luôn đảo toàn bộ submission
+trong một transaction; cùng key retry submission đó là idempotent, nhưng tái dùng key cho
+submission khác là conflict. Reverse purchase đồng thời giảm inventory.
 
 ## Public ranking
 

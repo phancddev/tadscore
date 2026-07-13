@@ -14,6 +14,8 @@ import { Field } from '../../components/ui/Field';
 import { Select } from '../../components/ui/Select';
 import { cn } from '../../lib/cn';
 import type { Activity, Team } from '../../lib/types';
+import { AwardPreviewTable } from './AwardPreviewTable';
+import { buildAwardPreviewRows } from './awardPreview';
 
 export function ranksValid(ranks: Record<string, number>, teamIds: string[]) {
   return (
@@ -58,6 +60,10 @@ export function RankEntry({
   const isReplace = selected?.status === 'finalized';
   const teamIds = teams.map((team) => team.teamId);
   const valid = useMemo(() => ranksValid(ranks, teamIds), [ranks, teamIds.join(':')]);
+  const previewRows = useMemo(
+    () => buildAwardPreviewRows(teams, ranks, selected?.medalAwards, selected?.pieceAwards),
+    [teams, ranks, selected?.medalAwards, selected?.pieceAwards],
+  );
   useEffect(() => {
     if (available.some((activity) => activity.activityKey === activityKey)) return;
     const next = available[0]?.activityKey || '';
@@ -166,6 +172,7 @@ export function RankEntry({
             {t('rank.incomplete')}
           </p>
         )}
+        <AwardPreviewTable rows={previewRows} isReplace={isReplace} valid={valid} />
         {confirming ? (
           <div className="rounded-[var(--radius)] border border-[var(--border)] bg-[var(--muted)]/40 p-4">
             <strong className="text-sm font-semibold">

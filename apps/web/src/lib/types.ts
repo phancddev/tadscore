@@ -101,6 +101,10 @@ export type Activity = {
   sequenceNo: number;
   status: 'draft' | 'open' | 'locked' | 'finalized';
   phase?: string;
+  /** Per-place medals from activity rule_config / rule_snapshot (rank 1 → index 0). */
+  medalAwards?: number[];
+  /** Per-place pieces from activity rule_config / rule_snapshot (rank 1 → index 0). */
+  pieceAwards?: number[];
 };
 export type Member = {
   id: string;

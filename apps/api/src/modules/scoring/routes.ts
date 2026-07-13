@@ -1,5 +1,5 @@
 import type { FastifyInstance } from 'fastify';
-import { pool, rows } from '../../lib/db.js';
+import { one, pool, rows } from '../../lib/db.js';
 import { camelize } from '../../lib/dto.js';
 import { requireWorkspaceRole } from '../auth/guards.js';
 import { economyRoutes } from './economy-routes.js';
@@ -8,17 +8,69 @@ import { gameRoutes } from './game-routes.js';
 import { ledgerEditRoutes } from './ledger-edit-routes.js';
 import { getRanking, getTeamDetail } from './ranking.js';
 
+function intArray(value: unknown): number[] | undefined {
+  if (!Array.isArray(value) || value.length === 0 || !value.every((item) => Number.isInteger(item)))
+    return undefined;
+  return value as number[];
+}
+
+/** Awards from workspace rule_snapshot by key, falling back to activity.rule_config (submit parity). */
+function awardsFromConfig(
+  ruleConfig: unknown,
+  snapshotActivity: { medalAwards?: number[]; pieceAwards?: number[] } | undefined,
+) {
+  const config =
+    ruleConfig && typeof ruleConfig === 'object' ? (ruleConfig as Record<string, unknown>) : {};
+  return {
+    medalAwards: intArray(snapshotActivity?.medalAwards) ?? intArray(config.medalAwards),
+    pieceAwards: intArray(snapshotActivity?.pieceAwards) ?? intArray(config.pieceAwards),
+  };
+}
+
 export async function scoringRoutes(app: FastifyInstance) {
   app.get(
     '/:workspaceId/activities',
     { preHandler: requireWorkspaceRole('viewer') },
     async (request) => {
       const workspaceId = (request.params as { workspaceId: string }).workspaceId;
-      const data = await rows(
-        'SELECT id,activity_key,name,activity_type,sequence_no,status FROM activities WHERE workspace_id=$1 ORDER BY sequence_no',
-        [workspaceId],
+      const [data, workspace] = await Promise.all([
+        rows<{
+          id: string;
+          activity_key: string;
+          name: string;
+          activity_type: string;
+          sequence_no: number;
+          status: string;
+          rule_config: unknown;
+        }>(
+          'SELECT id,activity_key,name,activity_type,sequence_no,status,rule_config FROM activities WHERE workspace_id=$1 ORDER BY sequence_no',
+          [workspaceId],
+        ),
+        one<{ rule_snapshot: unknown }>('SELECT rule_snapshot FROM workspaces WHERE id=$1', [
+          workspaceId,
+        ]),
+      ]);
+      const snapshot = workspace?.rule_snapshot as
+        | { activities?: Array<{ key: string; medalAwards?: number[]; pieceAwards?: number[] }> }
+        | undefined;
+      const snapshotByKey = new Map(
+        (snapshot?.activities ?? []).map((activity) => [activity.key, activity]),
       );
-      return { data: camelize(data) };
+      return {
+        data: data.map((row) => {
+          const awards = awardsFromConfig(row.rule_config, snapshotByKey.get(row.activity_key));
+          return camelize({
+            id: row.id,
+            activity_key: row.activity_key,
+            name: row.name,
+            activity_type: row.activity_type,
+            sequence_no: row.sequence_no,
+            status: row.status,
+            medal_awards: awards.medalAwards,
+            piece_awards: awards.pieceAwards,
+          });
+        }),
+      };
     },
   );
   app.get(
