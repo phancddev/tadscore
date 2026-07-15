@@ -50,10 +50,19 @@
       "phase": "before-bg2"
     },
     {
+      "key": "warmup-6",
+      "name": "Warm-up 6",
+      "type": "ranked_game",
+      "sequence": 6,
+      "medalAwards": [14, 7, 4, 2],
+      "pieceAwards": [0, 0, 0, 0],
+      "phase": "before-bg2"
+    },
+    {
       "key": "midterm-1",
       "name": "Midterm 1",
       "type": "ranked_game",
-      "sequence": 6,
+      "sequence": 7,
       "medalAwards": [16, 8, 5, 3],
       "pieceAwards": [0, 0, 0, 0],
       "phase": "before-bg2"
@@ -62,7 +71,7 @@
       "key": "midterm-2",
       "name": "Midterm 2",
       "type": "ranked_game",
-      "sequence": 7,
+      "sequence": 8,
       "medalAwards": [16, 8, 5, 3],
       "pieceAwards": [0, 0, 0, 0],
       "phase": "before-bg2"
@@ -71,7 +80,7 @@
       "key": "midterm-3",
       "name": "Midterm 3",
       "type": "ranked_game",
-      "sequence": 8,
+      "sequence": 9,
       "medalAwards": [16, 8, 5, 3],
       "pieceAwards": [0, 0, 0, 0],
       "phase": "before-bg2"
@@ -80,7 +89,7 @@
       "key": "midterm-4",
       "name": "Midterm 4",
       "type": "ranked_game",
-      "sequence": 9,
+      "sequence": 10,
       "medalAwards": [16, 8, 5, 3],
       "pieceAwards": [0, 0, 0, 0],
       "phase": "before-bg2"
@@ -89,7 +98,7 @@
       "key": "midterm-5",
       "name": "Midterm 5",
       "type": "ranked_game",
-      "sequence": 10,
+      "sequence": 11,
       "medalAwards": [16, 8, 5, 3],
       "pieceAwards": [0, 0, 0, 0],
       "phase": "before-bg2"
@@ -98,7 +107,7 @@
       "key": "big-game-1",
       "name": "Big Game 1",
       "type": "ranked_game",
-      "sequence": 11,
+      "sequence": 12,
       "medalAwards": [150, 100, 20, 5],
       "pieceAwards": [0, 0, 0, 0],
       "phase": "before-bg2"
@@ -107,7 +116,7 @@
       "key": "big-game-2",
       "name": "Big Game 2",
       "type": "ranked_game",
-      "sequence": 12,
+      "sequence": 13,
       "medalAwards": [120, 60, 40, 20],
       "pieceAwards": [3, 1, 0, 0],
       "phase": "after-bg2"
